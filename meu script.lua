@@ -6,8 +6,7 @@ local Window = OrionLib:MakeWindow({Name = "Vini Hub", HidePremium = false, Save
 
 
 
-
-local Main = Window:MakeTab({
+local main = Window:MakeTab({
 	Name = "Main",
 	Icon = "rbxassetid://4483345998",
 	PremiumOnly = false
@@ -21,7 +20,7 @@ local Section = Tab:AddSection({
 
 
 
-Main:AddButton({
+main:AddButton({
 	Name = "Fly",
 	Callback = function()
       		print("button pressed")
@@ -515,7 +514,7 @@ end)
 
 
 
-Main:AddButton({
+main:AddButton({
 	Name = "Noclip",
 	Callback = function()
       		print("button pressed")

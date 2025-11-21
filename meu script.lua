@@ -26,12 +26,11 @@ main:AddSection({
 })
 
 
-main:AddToggle({
-	Name = "Fly",
-	Default = false,
-	Callback = function(Value)
-		print(Value)
-	end    
+main:AddButton({
+	Name = "fly",
+	Callback = function()
+      		print("button pressed")
+  	end    
 })
 local main = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
@@ -507,3 +506,11 @@ mini2.MouseButton1Click:Connect(function()
 	main.Frame.BackgroundTransparency = 0 
 	closebutton.Position =  UDim2.new(0, 0, -1, 27)
 end)
+
+
+main:AddButton({
+	Name = "sei la",
+	Callback = function()
+      		print("button pressed")
+  	end    
+})

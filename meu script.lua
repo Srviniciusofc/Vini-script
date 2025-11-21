@@ -21,12 +21,12 @@ local main = Window:MakeTab({
 	PremiumOnly = false
 })
 
-local main AddSection({
+main:AddSection({
 	Name = "Inicio"
 })
 
 
-Tab:AddToggle({
+main:AddToggle({
 	Name = "Fly",
 	Default = false,
 	Callback = function(Value)

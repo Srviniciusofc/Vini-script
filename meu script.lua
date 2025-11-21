@@ -1,4 +1,4 @@
-local Orion = {}
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/jensonhirst/Orion/main/source')))()
 
 function Orion:CreateOrion(orionName)
     orionName = orionName or "Orion"
@@ -454,5 +454,5 @@ function Orion:CreateOrion(orionName)
                     local mainCorner_2 = Instance.new("UICorner")
                     local mainCorner_3 = Instance.new("UICorner")
 
-                    sliderFrame.Name = "sliderFrame"
-           
+                     sliderFrame.Name = "sliderFrame
+                    

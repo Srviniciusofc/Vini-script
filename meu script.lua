@@ -14,7 +14,7 @@ local main = Window:MakeTab({
 
 
 
-local Section = Tab:AddSection({
+main:AddSection({
 	Name = "Início"
 })
 

@@ -529,3 +529,15 @@ for _, player in pairs(players) do
         end
     end
 end
+
+main:AddButton({
+	Name = "infinite jump",
+	Callback = function()
+      		print("button pressed")
+  	end    
+})local InfiniteJumpEnabled = true
+game:GetService("UserInputService").JumpRequest:connect(function()
+	if InfiniteJumpEnabled then
+		game:GetService"Players".LocalPlayer.Character:FindFirstChildOfClass'Humanoid':ChangeState("Jumping")
+	end
+end)

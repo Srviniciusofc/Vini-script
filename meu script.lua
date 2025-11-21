@@ -359,7 +359,13 @@ onof.MouseButton1Down:connect(function()
 	end
 
 
-
+main:AddButton({
+	Name = "noclip (atravessar coisas)",
+	Callback = function()
+   local Players = game.Players
+   print(#Players:GetChildren())
+	end
+})
 
 
 end)
@@ -496,36 +502,126 @@ mini2.MouseButton1Click:Connect(function()
 	closebutton.Position =  UDim2.new(0, 0, -1, 27)
 end)
 
-local Main = Window:MakeTab({
-	Name = "Main",
-	Icon = "rbxassetid://4483345998",
-	PremiumOnly = false
-})
 
-Universal:AddButton({
-	Name = "Noclip",
-	Callback = function()
-  local Noclip = nil
-local Clip = nil
 
-function noclip()
-	Clip = false
-	local function Nocl()
-		if Clip == false and game.Players.LocalPlayer.Character ~= nil then
-			for _,v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-				if v:IsA('BasePart') and v.CanCollide and v.Name ~= floatName then
-					v.CanCollide = false
-				end
-			end
-		end
-		wait(0.21) -- basic optimization
-	end
-	Noclip = game:GetService('RunService').Stepped:Connect(Nocl)
-end
 
-function clip()
-	if Noclip then Noclip:Disconnect() end
-	Clip = true
-end
 
-noclip()
+  local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local Noclip = Instance.new("ScreenGui")
+local BG = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local Toggle = Instance.new("TextButton")
+local StatusPF = Instance.new("TextLabel")
+local Status = Instance.new("TextLabel")
+local Credit = Instance.new("TextLabel")
+local ExitButton = Instance.new("TextButton")
+local Plr = Players.LocalPlayer
+local Clipon = false
+
+Noclip.Name = "Noclip"
+Noclip.Parent = CoreGui
+
+BG.Name = "BG"
+BG.Parent = Noclip
+BG.BackgroundColor3 = Color3.new(0.098, 0.098, 0.098)
+BG.BorderSizePixel = 2
+BG.Position = UDim2.new(0.4, 0, 0.3, 0)
+BG.Size = UDim2.new(0, 250, 0, 180)
+BG.Active = true
+BG.Draggable = true  -- Ensures the box is draggable
+
+Title.Name = "Title"
+Title.Parent = BG
+Title.BackgroundColor3 = Color3.new(0.266, 0.003, 0.627)
+Title.Size = UDim2.new(0, 250, 0, 40)
+Title.Font = Enum.Font.Highway
+Title.Text = "Noclip"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextSize = 32
+Title.TextXAlignment = Enum.TextXAlignment.Center
+
+Toggle.Parent = BG
+Toggle.BackgroundColor3 = Color3.new(0.266, 0.003, 0.627)
+Toggle.Position = UDim2.new(0.15, 0, 0.35, 0)
+Toggle.Size = UDim2.new(0, 180, 0, 40)
+Toggle.Font = Enum.Font.Highway
+Toggle.Text = "Toggle"
+Toggle.TextColor3 = Color3.new(1, 1, 1)
+Toggle.TextSize = 26
+Toggle.TextXAlignment = Enum.TextXAlignment.Center
+
+StatusPF.Name = "StatusPF"
+StatusPF.Parent = BG
+StatusPF.Position = UDim2.new(0.25, 0, 0.65, 0)
+StatusPF.Size = UDim2.new(0, 70, 0, 25)
+StatusPF.Font = Enum.Font.Highway
+StatusPF.Text = "Status:"
+StatusPF.TextColor3 = Color3.new(1, 1, 1)
+StatusPF.TextSize = 22
+StatusPF.TextXAlignment = Enum.TextXAlignment.Center
+
+Status.Name = "Status"
+Status.Parent = BG
+Status.Position = UDim2.new(0.55, 0, 0.65, 0)
+Status.Size = UDim2.new(0, 70, 0, 25)
+Status.Font = Enum.Font.Highway
+Status.Text = "off"
+Status.TextColor3 = Color3.new(0.666, 0, 0)
+Status.TextSize = 20
+Status.TextXAlignment = Enum.TextXAlignment.Center
+
+Credit.Name = "Credit"
+Credit.Parent = BG
+Credit.Position = UDim2.new(0.2, 0, 0.85, 0)
+Credit.Size = UDim2.new(0, 150, 0, 20)
+Credit.Font = Enum.Font.SourceSans
+Credit.Text = "Modded by BR3XALITY"  -- Changed "Created by" to "Modded by"
+Credit.TextColor3 = Color3.new(1, 1, 1)
+Credit.TextSize = 18
+Credit.TextXAlignment = Enum.TextXAlignment.Center
+
+ExitButton.Name = "ExitButton"
+ExitButton.Parent = BG
+ExitButton.BackgroundColor3 = Color3.new(1, 0, 0)
+ExitButton.Position = UDim2.new(0.9, 0, 0, 0)
+ExitButton.Size = UDim2.new(0, 25, 0, 25)
+ExitButton.Font = Enum.Font.Highway
+ExitButton.Text = "X"
+ExitButton.TextColor3 = Color3.new(1, 1, 1)
+ExitButton.TextSize = 16
+ExitButton.TextXAlignment = Enum.TextXAlignment.Center
+
+Toggle.MouseButton1Click:Connect(function()
+    if Status.Text == "off" then
+        Clipon = true
+        Status.Text = "on"
+        Status.TextColor3 = Color3.new(0, 1, 0)
+        Stepped = RunService.Stepped:Connect(function()
+            if Clipon then
+                for _, b in pairs(Workspace:GetChildren()) do
+                    if b.Name == Plr.Name then
+                        for _, v in pairs(b:GetChildren()) do
+                            if v:IsA("BasePart") then
+                                v.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            else
+                Stepped:Disconnect()
+            end
+        end)
+    else
+        Clipon = false
+        Status.Text = "off"
+        Status.TextColor3 = Color3.new(1, 0, 0)
+    end
+end)
+
+ExitButton.MouseButton1Click:Connect(function()
+    Noclip:Destroy()
+end)

@@ -19,3 +19,20 @@ main:AddButton({
    print(#Players:GetChildren())
 	end
 })
+
+local Predict = Window:MakeTab({
+	Name = "Predict",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+Predict:AddSection({
+	Name = "verificar desastre" })
+
+Predict:AddButton({
+	Name = "Mostrar desatre",
+	Callback = function()
+   local Players = game.Players
+   print(#predictDisaster())
+	end
+})

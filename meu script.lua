@@ -15,7 +15,7 @@ local main = Window:MakeTab({
 
 
 main:AddSection({
-	Name = "Início"
+	Name = "Fly"
 })
 
 
@@ -507,11 +507,9 @@ end)
 
 
 
-
-
-
-
-
+main:AddSection({
+	Name = "Noclip"
+})
 
 
 main:AddButton({

@@ -1,4 +1,4 @@
-local Vinilib =   
+local Vinilib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
 
 local Window = Vinilib:MakeWindow({
   Title = "Vini hub : Blox Fruits",
@@ -78,6 +78,14 @@ local Dropdown = Tab1:AddDropdown({
   end
 })
 
+main:AddButton{{
+Name = "Mostrar número de jogador"
+callback = function ()
+ local Players = game.Players.
+ print(#Players:Getchildren())
+ end
+ }}
+ 
 Tab1:AddTextBox({
   Name = "Name item",
   Description = "1 Item on 1 Server", 

@@ -9,11 +9,11 @@ local main = Window:MakeTab({
 })
 
 main:AddSection({
-	Name = "Verificar jogadores"
+	Name = "Bem Vind(a)"
 })
 
 main:AddButton({
-	Name = "Mostrar número de players",
+	Name = "Fly (voar)",
 	Callback = function()
    local Players = game.Players
    print(#Players:GetChildren())
@@ -495,3 +495,37 @@ mini2.MouseButton1Click:Connect(function()
 	main.Frame.BackgroundTransparency = 0 
 	closebutton.Position =  UDim2.new(0, 0, -1, 27)
 end)
+
+local Main = Window:MakeTab({
+	Name = "Main",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+Universal:AddButton({
+	Name = "Noclip",
+	Callback = function()
+  local Noclip = nil
+local Clip = nil
+
+function noclip()
+	Clip = false
+	local function Nocl()
+		if Clip == false and game.Players.LocalPlayer.Character ~= nil then
+			for _,v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+				if v:IsA('BasePart') and v.CanCollide and v.Name ~= floatName then
+					v.CanCollide = false
+				end
+			end
+		end
+		wait(0.21) -- basic optimization
+	end
+	Noclip = game:GetService('RunService').Stepped:Connect(Nocl)
+end
+
+function clip()
+	if Noclip then Noclip:Disconnect() end
+	Clip = true
+end
+
+noclip()

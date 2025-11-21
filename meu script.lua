@@ -1,67 +1,21 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/jensonhirst/Orion/main/source')))()
 
+local Window = OrionLib:MakeWindow({Name = "Vini hub", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionTest"})
 
--- Guardando um valor em variável
-local nomeDoHub = "Meu Hub"
+local main = Window:MakeTab({
+	Name = "Main",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
 
--- Função que usa a variável
-local function mostrarMensagem()
-    print("Bem-vindo ao " .. nomeDoHub)
-end
+main:AddSection({
+	Name = "Verificar jogadores"
+})
 
--- Chamando a função
-mostrarMensagem()
-
-
- -- Cria um ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = game.Players.LocalPlayer.PlayerGui
-
--- Cria um botão
-local botao = Instance.new("TextButton")
-botao.Parent = screenGui
-botao.Size = UDim2.new(0, 150, 0, 50)
-botao.Position = UDim2.new(0.5, -75, 0.5, -25)
-botao.Text = "Clique aqui!"
-
--- Ação do botão
-botao.MouseButton1Click:Connect(function()
-    print("Você clicou no botão!")
-end)
-
- -- Frame principal
-local screenGui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 300, 0, 200)
-frame.Position = UDim2.new(0.5, -150, 0.5, -100)
-frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-
--- Botão de minimizar
-local minimizar = Instance.new("TextButton", frame)
-minimizar.Size = UDim2.new(0, 30, 0, 30)
-minimizar.Position = UDim2.new(1, -35, 0, 5)
-minimizar.Text = "-"
-
--- Lógica de abrir/fechar
-local aberto = true
-minimizar.MouseButton1Click:Connect(function()
-    aberto = not aberto
-    frame.Visible = aberto
-end)
-
-
-Módulos local FuncoesHub = {}
-
-function FuncoesHub.Saudar(nome)
-    print("Olá, " .. nome .. "!")
-end
-
-function FuncoesHub.Somar(a, b)
-    return a + b
-end
-
-return FuncoesHub
-
-Script (separar códigos local FuncoesHub = require(game.ReplicatedStorage.FuncoesHub)
-
-FuncoesHub.Saudar("Player")
-print("Resultado: " .. FuncoesHub.Somar(5, 7))
+main:AddButton({
+	Name = "Mostrar número de players",
+	Callback = function()
+   local Players = game.Players
+   print(#Players:GetChildren())
+	end
+})

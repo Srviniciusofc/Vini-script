@@ -996,150 +996,105 @@ end)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Variables
+-- Variáveis
 local autoClickEnabled = false
-local clickDelay = 0.2 -- default seconds between clicks
+local clickDelay = 0.2 -- segundos entre cliques
 
--- GUI Creation
+-- GUI Principal
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoClickerGUI"
+ScreenGui.Name = "ExtraButtonsGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Main draggable frame
-local ClickFrame = Instance.new("Frame")
-ClickFrame.Size = UDim2.new(0, 120, 0, 120)
-ClickFrame.Position = UDim2.new(0.5, -60, 0.5, -60)
-ClickFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-ClickFrame.BorderSizePixel = 0
-ClickFrame.Parent = ScreenGui
+-- Função para criar botões genéricos
+local function addButton(name, position, size, color, text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = size or UDim2.new(0, 120, 0, 50)
+    btn.Position = position or UDim2.new(0.5, -60, 0.5, -25)
+    btn.BackgroundColor3 = color or Color3.fromRGB(0, 0, 255)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.Fantasy
+    btn.TextSize = 18
+    btn.Text = text or name
+    btn.Parent = ScreenGui
+    btn.Active = true
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 60)
-UICorner.Parent = ClickFrame
+    local dragging, dragInput, dragStart, startPos
 
--- Label
-local Label = Instance.new("TextLabel")
-Label.Size = UDim2.new(1, 0, 0.5, 0)
-Label.Position = UDim2.new(0, 0, 0, 0)
-Label.BackgroundTransparency = 1
-Label.Text = "AutoClick"
-Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-Label.Font = Enum.Font.Fantasy
-Label.TextSize = 18
-Label.Parent = ClickFrame
+    -- Permitir arrastar o botão
+    local function update(input)
+        local delta = input.Position - dragStart
+        btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                  startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
 
--- Toggle Button
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0.8, 0, 0.15, 0)
-ToggleButton.Position = UDim2.new(0.1, 0, 0.55, 0)
-ToggleButton.Text = "OFF"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-ToggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-ToggleButton.Font = Enum.Font.Fondamento
-ToggleButton.TextSize = 16
-ToggleButton.Parent = ClickFrame
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = btn.Position
 
--- Slider for speed
-local SliderBar = Instance.new("Frame")
-SliderBar.Size = UDim2.new(0.8, 0, 0.1, 0)
-SliderBar.Position = UDim2.new(0.1, 0, 0.75, 0)
-SliderBar.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-SliderBar.BorderSizePixel = 0
-SliderBar.Parent = ClickFrame
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
 
-local SliderFill = Instance.new("Frame")
-SliderFill.Size = UDim2.new(0.5, 0, 1, 0) -- default 50%
-SliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-SliderFill.BorderSizePixel = 0
-SliderFill.Parent = SliderBar
+    btn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
 
-local SliderButton = Instance.new("TextButton")
-SliderButton.Size = UDim2.new(0, 15, 1, 0)
-SliderButton.Position = UDim2.new(0.5, -7.5, 0, 0)
-SliderButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-SliderButton.BorderSizePixel = 0
-SliderButton.Text = ""
-SliderButton.Parent = SliderBar
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
 
--- Drag frame functionality
-local dragging, dragInput, dragStart, startPos
-local function update(input)
-    local delta = input.Position - dragStart
-    ClickFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    btn.MouseButton1Click:Connect(callback)
 end
 
-ClickFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = ClickFrame.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-ClickFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
-
--- Toggle AutoClick function
+-- Função para ativar/desativar AutoClick
 local function toggleAutoClick()
     autoClickEnabled = not autoClickEnabled
-    ToggleButton.Text = autoClickEnabled and "ON" or "OFF"
-    ToggleButton.BackgroundColor3 = autoClickEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    print("AutoClick:", autoClickEnabled and "ON" or "OFF")
 end
 
-ToggleButton.MouseButton1Click:Connect(toggleAutoClick)
+-- Criar botão de AutoClick separadamente
+addButton("AutoClickButton",
+    UDim2.new(0.7, 0, 0.7, 0), -- posição inicial
+    UDim2.new(0, 120, 0, 50), -- tamanho
+    Color3.fromRGB(0, 255, 0), -- cor
+    "AutoClick", -- texto
+    toggleAutoClick -- função ao clicar
+)
 
--- Slider drag functionality
-local sliding = false
-SliderButton.MouseButton1Down:Connect(function()
-    sliding = true
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        sliding = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local barPos = SliderBar.AbsolutePosition.X
-        local barSize = SliderBar.AbsoluteSize.X
-        local mouseX = input.Position.X
-        local percent = math.clamp((mouseX - barPos)/barSize, 0, 1)
-        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
-        SliderButton.Position = UDim2.new(percent, -7.5, 0, 0)
-        -- Map percent to clickDelay (0.05s to 1s)
-        clickDelay = 1 - percent + 0.05
-    end
-end)
-
--- AutoClick loop (clicks ClickDetectors under frame center)
-spawn(function()
-    while true do
-        if autoClickEnabled then
-            local centerPos = ClickFrame.AbsolutePosition + ClickFrame.AbsoluteSize/2
+-- Loop do AutoClick (clicando ClickDetectors sob o botão)
+RunService.Heartbeat:Connect(function()
+    if autoClickEnabled then
+        local btn = ScreenGui:FindFirstChild("AutoClickButton")
+        if btn then
+            local centerPos = btn.AbsolutePosition + btn.AbsoluteSize/2
             local ray = workspace.CurrentCamera:ScreenPointToRay(centerPos.X, centerPos.Y)
             local raycastParams = RaycastParams.new()
             raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
@@ -1155,6 +1110,5 @@ spawn(function()
                 end
             end
         end
-        wait(clickDelay)
     end
 end)

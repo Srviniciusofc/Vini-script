@@ -719,51 +719,40 @@ end
 
 
 
-function Tornado()
-    local LocalPlayer = game.Players.LocalPlayer
-    if not LocalPlayer or not LocalPlayer.Character then return end
-    local hrp = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-
-    local tornado = Instance.new("Part")
-    tornado.Name = "Tornado_OP"
-    tornado.Size = Vector3.new(50, 200, 50)
-    tornado.Anchored = true
-    tornado.CanCollide = false
-    tornado.Transparency = 0.5
-    tornado.Color = Color3.new(0.5,0.5,0.5)
-    tornado.Material = Enum.Material.Neon
-    tornado.Position = hrp.Position
-    tornado.Parent = workspace
-
-    local RAIO = 10000 -- raio gigante
-    tornado:SetAttribute("Active", true)
+function TornadoVoid()
+    local Players = game:GetService("Players")
+    local workspaceDescendants = workspace:GetDescendants()
+    local TORNADO_POSITION = Vector3.new(0, 50, 0) -- centro do tornado
+    local TORNADO_RADIUS = 10000                   -- raio máximo
+    local FORCE = 10000                            -- força máxima
+    local DAMAGE = math.huge                       -- dano instantâneo
 
     task.spawn(function()
-        while tornado:GetAttribute("Active") do
-            task.wait(0.03)
-            tornado.CFrame = tornado.CFrame * CFrame.Angles(0, math.rad(500), 0) -- gira rápido
-
-            local objs = workspace:GetDescendants()
-            for i = 1, #objs do
-                local obj = objs[i]
-                if obj:IsA("BasePart") and not obj.Anchored then
+        for _, obj in ipairs(workspaceDescendants) do
+            if obj:IsA("BasePart") then
+                local dist = (obj.Position - TORNADO_POSITION).Magnitude
+                if dist <= TORNADO_RADIUS then
+                    -- Ignora jogadores
                     local model = obj:FindFirstAncestorWhichIsA("Model")
-                    local isPlayer = model and game.Players:GetPlayerFromCharacter(model)
-                    if not isPlayer then
-                        local dist = (obj.Position - tornado.Position).Magnitude
-                        if dist < RAIO then
-                            if model and model:FindFirstChild("Humanoid") then
-                                -- mata NPC instantaneamente
-                                model:Destroy()
-                            else
-                                -- deleta objeto normal
-                                obj:Destroy()
-                            end
+                    local belongsToPlayer = model and Players:GetPlayerFromCharacter(model)
+                    if not belongsToPlayer then
+                        -- Mata NPC instantaneamente
+                        if model and model:FindFirstChild("Humanoid") then
+                            model:Destroy()
+                        else
+                            -- Joga objeto pro void
+                            local bv = Instance.new("BodyVelocity")
+                            bv.MaxForce = Vector3.new(FORCE, FORCE, FORCE)
+                            bv.Velocity = Vector3.new(0, 10000, 0)
+                            bv.Parent = obj
+                            game:GetService("Debris"):AddItem(bv, 0.1)
                         end
                     end
                 end
             end
         end
-        tornado:Destroy()
     end)
 end
+
+-- Ativar tornado
+TornadoVoid()

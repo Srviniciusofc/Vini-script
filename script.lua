@@ -49,7 +49,7 @@ local Dialog = Window:Dialog({
 main:AddButton({
     Name = "Fly",
     Callback = function()
-        Flygui()
+        Fly()
     end
 })
 
@@ -126,7 +126,7 @@ Window:SelectTab(main)
 
 
 
-local function Flygui()
+function Fly()
     print("Fly ativado!")
     local main = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")

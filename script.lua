@@ -122,7 +122,7 @@ end)
 
 
 
-Main:AddButton({
+InicionSection:AddButton({
 	Name = "Fly Gui V3",
 	Callback = function()
       		Fly()
@@ -637,7 +637,7 @@ end
 
 
 
-
+function Fly()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -1314,3 +1314,4 @@ TextButton1.Active = true
 TextButton1.MouseButton1Click:Connect(function() 
 loadstring(game:HttpGet("https://pastebin.com/raw/ySHJdZpb",true))()
 end)
+end

@@ -81,7 +81,13 @@ main:AddSlider({
     Increase = 1,
     Default = 16,
     Callback = function(Value)
-        print("Speed:", Value)
+        local player = game.Players.LocalPlayer
+        local char = player.Character or player.CharacterAdded:Wait()
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            humanoid.WalkSpeed = Value
+        end
     end
 })
 

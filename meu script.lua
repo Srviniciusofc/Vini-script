@@ -512,11 +512,7 @@ end)
 
 
 
-local main = Window:MakeTab({
-	Name = "main",
-	Icon = "rbxassetid://4483345998",
-	PremiumOnly = false
-})
+
 
 
 

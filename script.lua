@@ -690,7 +690,7 @@ UICorner.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.Position = UDim2.new(0, 0, 0, 0)
-Title.Text = "Super Ring Parts V6 by lukas"
+Title.Text = "Tornado by Vini"
 Title.TextColor3 = Color3.fromRGB(0, 0, 0)
 Title.BackgroundColor3 = Color3.fromRGB(0, 204, 204)
 Title.Font = Enum.Font.Fondamento
@@ -1072,21 +1072,21 @@ StarterGui:SetCore("SendNotification", {
     Title = "Hey",
     Text = "Enjoy the Script!",
     Icon = content,
-    Duration = 5
+    Duration = 0
 })
 
 StarterGui:SetCore("SendNotification", {
     Title = "TIPS",
     Text = "Click Textbox To edit Any of them",
     Icon = content,
-    Duration = 5
+    Duration = 0
 })
 
 StarterGui:SetCore("SendNotification", {
     Title = "Credits",
     Text = "On scriptblox!",
     Icon = content,
-    Duration = 5
+    Duration = 0
 })
 
 

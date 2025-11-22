@@ -97,87 +97,124 @@ main:AddSlider({
 
 
 
---// Serviços
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
---// Função para pegar lista de players
-local function GetPlayers()
+local selectedPlayer = nil
+local spectating = false
+
+-----------------------------------------------------
+-- FUNÇÃO: Atualizar lista de players
+-----------------------------------------------------
+local function UpdatePlayerList()
     local list = {}
+
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             table.insert(list, plr.Name)
         end
     end
+
     return list
 end
 
---// Função de Spectate
-local function SpectatePlayer(playerName)
-    local target = Players:FindFirstChild(playerName)
-    if target and target.Character then
-        local hum = target.Character:FindFirstChildWhichIsA("Humanoid")
-        if hum then
-            Camera.CameraSubject = hum
-        end
-    end
-end
-
---// Função para parar de espectar
-local function StopSpectate()
-    if LocalPlayer.Character then
-        local hum = LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
-        if hum then
-            Camera.CameraSubject = hum
-        end
-    end
-end
-
---// DROPDOWN DO REDZLIB
+-----------------------------------------------------
+-- DROPDOWN DE PLAYERS
+-----------------------------------------------------
 local PlayerDropdown = main:AddDropdown({
-    Name = "Players List",
-    Description = "Selecione um player para espectar",
-    Options = GetPlayers(),
-    Default = nil,
-    Flag = "player_list",
-    Callback = function(plr)
-        SpectatePlayer(plr)
+    Name = "Lista de Jogadores",
+    Options = UpdatePlayerList(),
+    Callback = function(value)
+        selectedPlayer = value
     end
 })
 
---// ATUALIZA AUTOMATICAMENTE
-Players.PlayerAdded:Connect(function()
-    PlayerDropdown:Refresh(GetPlayers())
-end)
-
-Players.PlayerRemoving:Connect(function()
-    PlayerDropdown:Refresh(GetPlayers())
-end)
-
---// BOTÃO PARA PARAR DE ESPECTAR
+-----------------------------------------------------
+-- BOTÃO: Atualizar lista
+-----------------------------------------------------
 main:AddButton({
-    Name = "Stop Spectate",
+    Name = "Atualizar Lista",
+    Callback = function()
+        local novaLista = UpdatePlayerList()
+        PlayerDropdown:Refresh(novaLista)
+    end
+})
+
+-----------------------------------------------------
+-- FUNÇÃO: Começar a espectar
+-----------------------------------------------------
+local function StartSpectate()
+    if not selectedPlayer then return end
+
+    local target = Players:FindFirstChild(selectedPlayer)
+    if not target then return end
+    if not target.Character then return end
+
+    local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    spectating = true
+    Camera.CameraSubject = humanoid
+end
+
+-----------------------------------------------------
+-- BOTÃO: Spectar Player
+-----------------------------------------------------
+main:AddButton({
+    Name = "Spectar Player",
+    Callback = function()
+        StartSpectate()
+    end
+})
+
+-----------------------------------------------------
+-- FUNÇÃO: Parar de espectar
+-----------------------------------------------------
+local function StopSpectate()
+    spectating = false
+
+    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        Camera.CameraSubject = humanoid
+    end
+end
+
+-----------------------------------------------------
+-- BOTÃO: Parar de Spectar
+-----------------------------------------------------
+main:AddButton({
+    Name = "Parar de Spectar",
     Callback = function()
         StopSpectate()
     end
 })
 
+-----------------------------------------------------
+-- Atualizar lista automaticamente quando players entram/saem
+-----------------------------------------------------
+Players.PlayerAdded:Connect(function()
+    PlayerDropdown:Refresh(UpdatePlayerList())
+end)
+
+Players.PlayerRemoving:Connect(function()
+    PlayerDropdown:Refresh(UpdatePlayerList())
+end)
 
 
 
 
 
 
--- TEXTBOX
-main:AddTextBox({
-    Name = "Item Name",
-    Description = "1 Item no servidor",
-    PlaceholderText = "Digite algo",
-    Callback = function(Value)
-        print("TextBox:", Value)
+
+
+main:AddButton({
+    Name = "Tornado",
+    Callback = function()
+        Tornado()
     end
 })
+
 
 -- Seleciona a Tab
 Window:SelectTab(main)
@@ -674,4 +711,51 @@ mini2.MouseButton1Click:Connect(function()
 	main.Frame.BackgroundTransparency = 0 
 	closebutton.Position =  UDim2.new(0, 0, -1, 27)
 end)
+end
+
+
+
+
+function Tornado()
+    print("Tornado ULTRA ativado!")
+
+    local tornado = Instance.new("Part")
+    tornado.Shape = Enum.PartType.Cylinder
+    tornado.Size = Vector3.new(40, 200, 40)
+    tornado.Anchored = true
+    tornado.CanCollide = false
+    tornado.Color = Color3.fromRGB(160, 160, 160)
+    tornado.Material = Enum.Material.Neon
+    tornado.Position = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+    tornado.Parent = workspace
+
+    -- CONFIG POTÊNCIA MÁXIMA
+    local raio = 10000         -- alcança praticamente o mapa inteiro
+    local velocidade = 8000     -- velocidade de giro extremamente alta
+    local destruir = true       -- deleta objetos
+
+    task.spawn(function()
+        while tornado.Parent do
+            task.wait(0.03)
+
+            -- Girar tornado absurdamente rápido
+            tornado.CFrame = tornado.CFrame * CFrame.Angles(0, math.rad(velocidade * 0.01), 0)
+
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and not obj.Anchored then
+                    local distancia = (obj.Position - tornado.Position).Magnitude
+
+                    if distancia < raio then
+                        if destruir then
+                            obj:Destroy()
+                        else
+                            -- puxa com força 10k
+                            local dir = (tornado.Position - obj.Position).Unit
+                            obj:ApplyImpulse(dir * 10000)
+                        end
+                    end
+                end
+            end
+        end
+    end)
 end

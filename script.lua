@@ -7,18 +7,18 @@ local Window = redzlib:MakeWindow({
   SaveFolder = "testando | redz lib v5.lua"
 })
 
-main9:AddMinimizeButton({
+Window:AddMinimizeButton({
     Button = { Image = "rbxassetid://71014873973869", BackgroundTransparency = 0 },
     Corner = { CornerRadius = UDim.new(35, 1) },
 })
 
 local main = Window:MakeTab({"Um", "cherry"})
 
-Tab1:AddDiscordInvite({
-    Name = "Name Hub",
+discord:AddDiscordInvite({
+    Name = "AETHERLAND",
     Description = "Join server",
     Logo = "rbxassetid://18751483361",
-    Invite = "Link discord invite",
+    Invite = "https://discord.gg/E7PPSwPh36",
 })
 
 Window:SelectTab(Tab1)

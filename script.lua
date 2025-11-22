@@ -213,7 +213,7 @@ local tornadoAtivo = false
 main:AddButton({
     Name = "Tornado",
     Callback = function()
-        Tornado()
+        TornadoVoid()
     end
 })
 
@@ -719,7 +719,7 @@ end
 
 
 
-function Tornado()
+function TornadoVoid()
     local Players = game:GetService("Players")
     local workspaceDescendants = workspace:GetDescendants()
     local TORNADO_POSITION = Vector3.new(0, 50, 0) -- centro do tornado

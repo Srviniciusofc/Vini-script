@@ -12,7 +12,7 @@ Window:AddMinimizeButton({
     Corner = { CornerRadius = UDim.new(35, 1) },
 })
 
-local main = Window:MakeTab({"Main", "cherry"})
+local main = Window:MakeTab({"main", "cherry"})
 
 discord:AddDiscordInvite({
     Name = "AETHERLAND",
@@ -21,9 +21,9 @@ discord:AddDiscordInvite({
     Invite = "https://discord.gg/E7PPSwPh36",
 })
 
-Window:SelectTab(Main)
+Window:SelectTab(main)
 
-local Section = Main:AddSection({"Section"})
+local Section = Mmin:AddSection({"Section"})
 
 local Paragraph = Main:AddParagraph({"Paragraph", "This is a Paragraph\nSecond Line"})
 

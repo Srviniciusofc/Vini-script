@@ -794,3 +794,76 @@ main:AddButton({
         end
     end
 })
+
+
+
+
+
+
+
+local tornadoAtivo = false
+
+function TornadoBlocos()
+    local tornado = Instance.new("Part")
+    tornado.Size = Vector3.new(20, 200, 20)
+    tornado.Anchored = true
+    tornado.CanCollide = false
+    tornado.Transparency = 1
+    tornado.Position = Vector3.new(0, 50, 0) -- posição inicial
+    tornado.Parent = workspace
+
+    local RAIO = 10000
+    local FORCA = 10000
+
+    tornadoAtivo = true
+
+    task.spawn(function()
+        while tornadoAtivo do
+            task.wait(0.03)
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    local ancestorModel = obj:FindFirstAncestorWhichIsA("Model")
+                    local pertencePlayer = false
+                    local ehNPC = false
+
+                    -- Ignorar players
+                    if ancestorModel then
+                        local plr = game.Players:GetPlayerFromCharacter(ancestorModel)
+                        if plr then
+                            pertencePlayer = true
+                        end
+
+                        -- Checa se é NPC
+                        if ancestorModel:FindFirstChild("Humanoid") then
+                            ehNPC = true
+                        end
+                    end
+
+                    -- Só pegar blocos soltos
+                    if not pertencePlayer and not ehNPC then
+                        -- Desancorar objetos
+                        if obj.Anchored then
+                            obj.Anchored = false
+                        end
+
+                        -- Jogar para o void
+                        local dir = Vector3.new(0, -10000, 0) - obj.Position
+                        obj.Velocity = dir.Unit * FORCA
+                    end
+                end
+            end
+        end
+        tornado:Destroy()
+    end)
+end
+
+-- Exemplo de botão para ativar/desativar
+main:AddButton({
+    Name = "Tornado de Blocos",
+    Callback = function()
+        tornadoAtivo = not tornadoAtivo
+        if tornadoAtivo then
+            TornadoBlocos()
+        end
+    end
+})

@@ -508,7 +508,7 @@ mini2.MouseButton1Click:Connect(function()
 end)
 
 
-main:AddButton({
+esp:AddButton({
 	Name = "esp",
 	Callback = function()
       		print("button pressed")

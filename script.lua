@@ -730,40 +730,89 @@ end
 
 
 
+-- Tornado Script by Vini Hub
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
 
--- Controle de ativação
-local ringPartsEnabled = false
+-- Config inicial do tornado
+local config = {
+    radius = 50,
+    height = 100,
+    rotationSpeed = 10,
+    attractionStrength = 1000
+}
 
--- GUI principal
+local tornadoEnabled = false
+local tornadoParts = {}
+
+-- GUI Tornado
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TornadoGUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 200)
-MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0) -- posição inicial
-MainFrame.BackgroundColor3 = Color3.fromRGB(0, 204, 204)
+MainFrame.Size = UDim2.new(0, 300, 0, 300)
+MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0,204,204)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1,0,0,30)
+Title.Size = UDim2.new(1,0,0,40)
 Title.Position = UDim2.new(0,0,0,0)
 Title.Text = "Tornado V6 by Vini Hub"
 Title.BackgroundColor3 = Color3.fromRGB(50,50,50)
 Title.TextColor3 = Color3.fromRGB(255,255,255)
 Title.Font = Enum.Font.Fantasy
-Title.TextSize = 18
+Title.TextSize = 20
 Title.Parent = MainFrame
 
--- Botão toggle tornado
+-- Função de criar sliders
+local function createSlider(name, posY, min, max, default, callback)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.8,0,0,30)
+    Label.Position = UDim2.new(0.1,0,posY,0)
+    Label.Text = name..": "..default
+    Label.BackgroundColor3 = Color3.fromRGB(255,153,51)
+    Label.TextColor3 = Color3.fromRGB(0,0,0)
+    Label.Font = Enum.Font.Fantasy
+    Label.TextSize = 16
+    Label.Parent = MainFrame
+
+    local TextBox = Instance.new("TextBox")
+    TextBox.Size = UDim2.new(0.8,0,0,30)
+    TextBox.Position = UDim2.new(0.1,0,posY+0.05,0)
+    TextBox.PlaceholderText = default
+    TextBox.BackgroundColor3 = Color3.fromRGB(0,0,255)
+    TextBox.TextColor3 = Color3.fromRGB(255,255,255)
+    TextBox.Font = Enum.Font.Fantasy
+    TextBox.TextSize = 16
+    TextBox.Parent = MainFrame
+
+    TextBox.FocusLost:Connect(function(enter)
+        local value = tonumber(TextBox.Text)
+        if value then
+            value = math.clamp(value, min, max)
+            Label.Text = name..": "..value
+            TextBox.Text = ""
+            callback(value)
+        end
+    end)
+end
+
+-- Sliders
+createSlider("Radius", 0.15, 10, 500, config.radius, function(val) config.radius = val end)
+createSlider("Height", 0.3, 10, 500, config.height, function(val) config.height = val end)
+createSlider("RotationSpeed", 0.45, 1, 50, config.rotationSpeed, function(val) config.rotationSpeed = val end)
+createSlider("Attraction", 0.6, 10, 5000, config.attractionStrength, function(val) config.attractionStrength = val end)
+
+-- Toggle Tornado
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0.8,0,0,40)
-ToggleButton.Position = UDim2.new(0.1,0,0.3,0)
+ToggleButton.Position = UDim2.new(0.1,0,0.75,0)
 ToggleButton.Text = "Tornado Off"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
 ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
@@ -772,12 +821,12 @@ ToggleButton.TextSize = 18
 ToggleButton.Parent = MainFrame
 
 ToggleButton.MouseButton1Click:Connect(function()
-    ringPartsEnabled = not ringPartsEnabled
-    ToggleButton.Text = ringPartsEnabled and "Tornado On" or "Tornado Off"
-    ToggleButton.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(50,205,50) or Color3.fromRGB(255,0,0)
+    tornadoEnabled = not tornadoEnabled
+    ToggleButton.Text = tornadoEnabled and "Tornado On" or "Tornado Off"
+    ToggleButton.BackgroundColor3 = tornadoEnabled and Color3.fromRGB(50,205,50) or Color3.fromRGB(255,0,0)
 end)
 
--- Função de arrastar menu
+-- Menu arrastável
 local dragging, dragInput, dragStart, startPos
 local function update(input)
     local delta = input.Position - dragStart
@@ -797,60 +846,38 @@ MainFrame.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 MainFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then
         dragInput = input
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         update(input)
     end
 end)
 
--- Configuração do tornado
-local config = {
-    radius = 50,
-    rotationSpeed = 10,
-    attractionStrength = 1000,
-}
-
--- Partes do tornado
-local parts = {}
-for _, p in pairs(workspace:GetDescendants()) do
-    if p:IsA("BasePart") and not p.Anchored then
-        table.insert(parts,p)
-    end
-end
-
-workspace.DescendantAdded:Connect(function(p)
-    if p:IsA("BasePart") and not p.Anchored then
-        table.insert(parts,p)
-    end
-end)
-
-workspace.DescendantRemoving:Connect(function(p)
-    local idx = table.find(parts,p)
-    if idx then table.remove(parts,idx) end
-end)
-
--- Loop tornado
+-- Função Tornado
 RunService.Heartbeat:Connect(function()
-    if not ringPartsEnabled then return end
+    if not tornadoEnabled then return end
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         local center = char.HumanoidRootPart.Position
-        for _, part in pairs(parts) do
-            if part.Parent and not part.Anchored then
-                local angle = math.atan2(part.Position.Z - center.Z, part.Position.X - center.X)
-                local newAngle = angle + math.rad(config.rotationSpeed)
-                local target = Vector3.new(center.X + math.cos(newAngle)*config.radius,
-                                           part.Position.Y,
-                                           center.Z + math.sin(newAngle)*config.radius)
-                part.Velocity = (target - part.Position).Unit*config.attractionStrength
+        -- Captura partes do workspace
+        tornadoParts = {}
+        for _, p in pairs(workspace:GetDescendants()) do
+            if p:IsA("BasePart") and not p.Anchored and p.Parent ~= LocalPlayer.Character then
+                table.insert(tornadoParts,p)
             end
+        end
+        for _, part in pairs(tornadoParts) do
+            local pos = part.Position
+            local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
+            local newAngle = angle + math.rad(config.rotationSpeed)
+            local target = Vector3.new(center.X + math.cos(newAngle)*config.radius,
+                                       center.Y + config.height,
+                                       center.Z + math.sin(newAngle)*config.radius)
+            part.Velocity = (target - pos).Unit * config.attractionStrength
         end
     end
 end)
@@ -862,15 +889,16 @@ end)
 
 
 
-
+-- AutoClick Script by Vini Hub
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Controle
 local autoClickEnabled = false
-local clickDelay = 0.2
+local clickDelay = 0.2 -- em segundos
+local clickX = 0.5 -- posição horizontal na tela (0 a 1)
+local clickY = 0.5 -- posição vertical na tela (0 a 1)
 
 -- GUI AutoClick
 local ScreenGui = Instance.new("ScreenGui")
@@ -878,31 +906,68 @@ ScreenGui.Name = "AutoClickGUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 150, 0, 70)
-MainFrame.Position = UDim2.new(0.5, -75, 0.7, 0)
+MainFrame.Size = UDim2.new(0,200,0,200)
+MainFrame.Position = UDim2.new(0.7,0,0.7,0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(0,255,0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1,0,0,20)
+Title.Size = UDim2.new(1,0,0,40)
 Title.Position = UDim2.new(0,0,0,0)
 Title.Text = "AutoClick"
 Title.BackgroundColor3 = Color3.fromRGB(50,50,50)
 Title.TextColor3 = Color3.fromRGB(255,255,255)
 Title.Font = Enum.Font.Fantasy
-Title.TextSize = 16
+Title.TextSize = 20
 Title.Parent = MainFrame
 
--- Botão toggle
+-- Slider para velocidade (delay)
+local function createSlider(name, posY, min, max, default, callback)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.8,0,0,30)
+    Label.Position = UDim2.new(0.1,0,posY,0)
+    Label.Text = name..": "..default
+    Label.BackgroundColor3 = Color3.fromRGB(255,153,51)
+    Label.TextColor3 = Color3.fromRGB(0,0,0)
+    Label.Font = Enum.Font.Fantasy
+    Label.TextSize = 16
+    Label.Parent = MainFrame
+
+    local TextBox = Instance.new("TextBox")
+    TextBox.Size = UDim2.new(0.8,0,0,30)
+    TextBox.Position = UDim2.new(0.1,0,posY+0.05,0)
+    TextBox.PlaceholderText = default
+    TextBox.BackgroundColor3 = Color3.fromRGB(0,0,255)
+    TextBox.TextColor3 = Color3.fromRGB(255,255,255)
+    TextBox.Font = Enum.Font.Fantasy
+    TextBox.TextSize = 16
+    TextBox.Parent = MainFrame
+
+    TextBox.FocusLost:Connect(function(enter)
+        local value = tonumber(TextBox.Text)
+        if value then
+            value = math.clamp(value,min,max)
+            Label.Text = name..": "..value
+            TextBox.Text = ""
+            callback(value)
+        end
+    end)
+end
+
+createSlider("Delay(s)",0.15,0.01,2,clickDelay,function(val) clickDelay = val end)
+createSlider("X Position",0.3,0,1,clickX,function(val) clickX = val end)
+createSlider("Y Position",0.45,0,1,clickY,function(val) clickY = val end)
+
+-- Toggle AutoClick
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0.8,0,0,30)
-ToggleButton.Position = UDim2.new(0.1,0,0.4,0)
+ToggleButton.Size = UDim2.new(0.8,0,0,40)
+ToggleButton.Position = UDim2.new(0.1,0,0.7,0)
 ToggleButton.Text = "Off"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
 ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
 ToggleButton.Font = Enum.Font.Fantasy
-ToggleButton.TextSize = 16
+ToggleButton.TextSize = 18
 ToggleButton.Parent = MainFrame
 
 ToggleButton.MouseButton1Click:Connect(function()
@@ -911,7 +976,7 @@ ToggleButton.MouseButton1Click:Connect(function()
     ToggleButton.BackgroundColor3 = autoClickEnabled and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
 end)
 
--- Arrastar menu
+-- Menu arrastável
 local dragging, dragInput, dragStart, startPos
 local function update(input)
     local delta = input.Position - dragStart
@@ -931,13 +996,11 @@ MainFrame.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 MainFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then
         dragInput = input
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         update(input)
@@ -945,23 +1008,21 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- Loop AutoClick
-RunService.Heartbeat:Connect(function()
-    if not autoClickEnabled then return end
-
-    local btn = MainFrame
-    local centerPos = btn.AbsolutePosition + btn.AbsoluteSize/2
-    local ray = workspace.CurrentCamera:ScreenPointToRay(centerPos.X, centerPos.Y)
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-    local raycastResult = workspace:Raycast(ray.Origin, ray.Direction*1000, raycastParams)
-    if raycastResult then
-        local target = raycastResult.Instance
-        if target then
-            local clickDetector = target:FindFirstChildOfClass("ClickDetector")
-            if clickDetector then
-                clickDetector:ClickDetector(target, LocalPlayer)
+spawn(function()
+    while true do
+        if autoClickEnabled then
+            local camera = workspace.CurrentCamera
+            local screenX = camera.ViewportSize.X * clickX
+            local screenY = camera.ViewportSize.Y * clickY
+            local ray = camera:ScreenPointToRay(screenX,screenY)
+            local result = workspace:Raycast(ray.Origin, ray.Direction*1000)
+            if result then
+                local target = result.Instance
+                if target and target:FindFirstChildOfClass("ClickDetector") then
+                    target:FindFirstChildOfClass("ClickDetector"):ClickDetector(target,LocalPlayer)
+                end
             end
         end
+        wait(clickDelay)
     end
 end)

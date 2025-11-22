@@ -85,17 +85,83 @@ main:AddSlider({
     end
 })
 
--- DROPDOWN
-local Dropdown = main:AddDropdown({
+
+
+
+
+
+
+--// Serviços
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+--// Função para pegar lista de players
+local function GetPlayers()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(list, plr.Name)
+        end
+    end
+    return list
+end
+
+--// Função de Spectate
+local function SpectatePlayer(playerName)
+    local target = Players:FindFirstChild(playerName)
+    if target and target.Character then
+        local hum = target.Character:FindFirstChildWhichIsA("Humanoid")
+        if hum then
+            Camera.CameraSubject = hum
+        end
+    end
+end
+
+--// Função para parar de espectar
+local function StopSpectate()
+    if LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+        if hum then
+            Camera.CameraSubject = hum
+        end
+    end
+end
+
+--// DROPDOWN DO REDZLIB
+local PlayerDropdown = main:AddDropdown({
     Name = "Players List",
-    Description = "Selecione um número",
-    Options = {"one", "two", "three"},
-    Default = "two",
-    Flag = "dropdown teste",
-    Callback = function(Value)
-        print("Dropdown:", Value)
+    Description = "Selecione um player para espectar",
+    Options = GetPlayers(),
+    Default = nil,
+    Flag = "player_list",
+    Callback = function(plr)
+        SpectatePlayer(plr)
     end
 })
+
+--// ATUALIZA AUTOMATICAMENTE
+Players.PlayerAdded:Connect(function()
+    PlayerDropdown:Refresh(GetPlayers())
+end)
+
+Players.PlayerRemoving:Connect(function()
+    PlayerDropdown:Refresh(GetPlayers())
+end)
+
+--// BOTÃO PARA PARAR DE ESPECTAR
+main:AddButton({
+    Name = "Stop Spectate",
+    Callback = function()
+        StopSpectate()
+    end
+})
+
+
+
+
+
+
 
 -- TEXTBOX
 main:AddTextBox({

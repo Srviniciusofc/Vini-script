@@ -1,116 +1,50 @@
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
 
--- Criar janela
 local Window = redzlib:MakeWindow({
     Title = "Vini Hub",
     SubTitle = "by Vini 👀",
     SaveFolder = "ViniHubConfig"
 })
 
--- Botão de minimizar
-Window:AddMinimizeButton({
-    Button = {
-        Image = "rbxassetid://71014873973869",
-        BackgroundTransparency = 0
-    },
-    Corner = { CornerRadius = UDim.new(0, 12) }
-})
-
--- Criar tab principal
+-- Criar tab
 local mainTab = Window:MakeTab({"Main", "cherry"})
 
--- Criar seção "Início"
+-- Criar seção
 local inicioSection = mainTab:AddSection({
     Name = "Início"
 })
 
--- BOTÃO: Fly
+-- Botão
 inicioSection:AddButton({
     Name = "Fly",
     Callback = function()
-        -- Certifique-se que a função Fly() existe
-        Fly()
+        print("Fly clicado!")
     end
 })
 
--- TOGGLE de exemplo
+-- Toggle
 local toggleExemplo = inicioSection:AddToggle({
     Name = "Toggle Exemplo",
-    Description = "Um toggle de exemplo",
     Default = false
 })
-
-toggleExemplo:Callback(function(Value)
-    print("Toggle:", Value)
+toggleExemplo:Callback(function(value)
+    print("Toggle:", value)
 end)
 
--- Segundo toggle
-local toggleFly = inicioSection:AddToggle({
-    Name = "Fly",
-    Default = false,
-    Callback = function(v)
-        print("Fly:", v)
-    end
-})
-
--- SLIDER: Speed
+-- Slider
 inicioSection:AddSlider({
     Name = "Speed",
     Min = 1,
     Max = 100,
-    Increase = 1,
     Default = 16,
-    Callback = function(Value)
-        local player = game.Players.LocalPlayer
-        local char = player.Character or player.CharacterAdded:Wait()
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = Value
-        end
-    end
-})
-
--- DROPDOWN: Lista de players
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-local function UpdatePlayerList()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(list, plr.Name)
-        end
-    end
-    return list
-end
-
-local PlayerDropdown = inicioSection:AddDropdown({
-    Name = "Lista de Jogadores",
-    Options = UpdatePlayerList(),
     Callback = function(value)
-        selectedPlayer = value
-    end
-})
-
--- BOTÃO: Atualizar lista de players
-inicioSection:AddButton({
-    Name = "Atualizar Lista",
-    Callback = function()
-        PlayerDropdown:Refresh(UpdatePlayerList())
-    end
-})
-
--- BOTÃO: Tornado
-inicioSection:AddButton({
-    Name = "Tornado",
-    Callback = function()
-        -- Certifique-se que a função TornadoVoid() existe
-        TornadoVoid()
+        print("Speed:", value)
     end
 })
 
 -- Seleciona a tab
 Window:SelectTab(mainTab)
+
 
 
 

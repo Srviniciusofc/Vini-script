@@ -730,262 +730,212 @@ end
 
 
 
--- Tornado Script by Vini Hub
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
+local SoundService = game:GetService("SoundService")
+local StarterGui = game:GetService("StarterGui")
+local TextChatService = game:GetService("TextChatService")
 local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
 
--- Config inicial do tornado
-local config = {
-    radius = 50,
-    height = 100,
-    rotationSpeed = 10,
-    attractionStrength = 1000
-}
+-- Character / HumanoidRootPart
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-local tornadoEnabled = false
-local tornadoParts = {}
+-- Folder & invisible part for AlignPosition
+local Folder = Instance.new("Folder", Workspace)
+local Part = Instance.new("Part", Folder)
+Part.Anchored = true
+Part.CanCollide = false
+Part.Transparency = 1
+local Attachment1 = Instance.new("Attachment", Part)
 
--- GUI Tornado
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TornadoGUI"
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- Network / Part Control
+if not getgenv().Network then
+    getgenv().Network = {
+        BaseParts = {},
+        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424),
+    }
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 300)
-MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(0,204,204)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1,0,0,40)
-Title.Position = UDim2.new(0,0,0,0)
-Title.Text = "Tornado V6 by Vini Hub"
-Title.BackgroundColor3 = Color3.fromRGB(50,50,50)
-Title.TextColor3 = Color3.fromRGB(255,255,255)
-Title.Font = Enum.Font.Fantasy
-Title.TextSize = 20
-Title.Parent = MainFrame
-
--- Função de criar sliders
-local function createSlider(name, posY, min, max, default, callback)
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.8,0,0,30)
-    Label.Position = UDim2.new(0.1,0,posY,0)
-    Label.Text = name..": "..default
-    Label.BackgroundColor3 = Color3.fromRGB(255,153,51)
-    Label.TextColor3 = Color3.fromRGB(0,0,0)
-    Label.Font = Enum.Font.Fantasy
-    Label.TextSize = 16
-    Label.Parent = MainFrame
-
-    local TextBox = Instance.new("TextBox")
-    TextBox.Size = UDim2.new(0.8,0,0,30)
-    TextBox.Position = UDim2.new(0.1,0,posY+0.05,0)
-    TextBox.PlaceholderText = default
-    TextBox.BackgroundColor3 = Color3.fromRGB(0,0,255)
-    TextBox.TextColor3 = Color3.fromRGB(255,255,255)
-    TextBox.Font = Enum.Font.Fantasy
-    TextBox.TextSize = 16
-    TextBox.Parent = MainFrame
-
-    TextBox.FocusLost:Connect(function(enter)
-        local value = tonumber(TextBox.Text)
-        if value then
-            value = math.clamp(value, min, max)
-            Label.Text = name..": "..value
-            TextBox.Text = ""
-            callback(value)
+    local Network = getgenv().Network
+    Network.RetainPart = function(Part)
+        if typeof(Part) == "Instance" and Part:IsA("BasePart") and Part:IsDescendantOf(Workspace) then
+            if not table.find(Network.BaseParts, Part) then
+                table.insert(Network.BaseParts, Part)
+                Part.CustomPhysicalProperties = PhysicalProperties.new(0,0,0,0,0)
+                Part.CanCollide = false
+            end
         end
-    end)
-end
+    end
 
--- Sliders
-createSlider("Radius", 0.15, 10, 500, config.radius, function(val) config.radius = val end)
-createSlider("Height", 0.3, 10, 500, config.height, function(val) config.height = val end)
-createSlider("RotationSpeed", 0.45, 1, 50, config.rotationSpeed, function(val) config.rotationSpeed = val end)
-createSlider("Attraction", 0.6, 10, 5000, config.attractionStrength, function(val) config.attractionStrength = val end)
-
--- Toggle Tornado
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0.8,0,0,40)
-ToggleButton.Position = UDim2.new(0.1,0,0.75,0)
-ToggleButton.Text = "Tornado Off"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
-ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
-ToggleButton.Font = Enum.Font.Fantasy
-ToggleButton.TextSize = 18
-ToggleButton.Parent = MainFrame
-
-ToggleButton.MouseButton1Click:Connect(function()
-    tornadoEnabled = not tornadoEnabled
-    ToggleButton.Text = tornadoEnabled and "Tornado On" or "Tornado Off"
-    ToggleButton.BackgroundColor3 = tornadoEnabled and Color3.fromRGB(50,205,50) or Color3.fromRGB(255,0,0)
-end)
-
--- Menu arrastável
-local dragging, dragInput, dragStart, startPos
-local function update(input)
-    local delta = input.Position - dragStart
-    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+    local function EnablePartControl()
+        LocalPlayer.ReplicationFocus = Workspace
+        RunService.Heartbeat:Connect(function()
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+            for _, Part in pairs(Network.BaseParts) do
+                if Part:IsDescendantOf(Workspace) then
+                    Part.Velocity = Network.Velocity
+                end
             end
         end)
     end
-end)
-MainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
 
--- Função Tornado
-RunService.Heartbeat:Connect(function()
-    if not tornadoEnabled then return end
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local center = char.HumanoidRootPart.Position
-        -- Captura partes do workspace
-        tornadoParts = {}
-        for _, p in pairs(workspace:GetDescendants()) do
-            if p:IsA("BasePart") and not p.Anchored and p.Parent ~= LocalPlayer.Character then
-                table.insert(tornadoParts,p)
+    EnablePartControl()
+end
+
+-- Force part for AlignPosition / Torque
+local function ForcePart(v)
+    if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
+        for _, x in next, v:GetChildren() do
+            if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
+                x:Destroy()
             end
         end
-        for _, part in pairs(tornadoParts) do
-            local pos = part.Position
-            local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
-            local newAngle = angle + math.rad(config.rotationSpeed)
-            local target = Vector3.new(center.X + math.cos(newAngle)*config.radius,
-                                       center.Y + config.height,
-                                       center.Z + math.sin(newAngle)*config.radius)
-            part.Velocity = (target - pos).Unit * config.attractionStrength
-        end
+        if v:FindFirstChild("Attachment") then v:FindFirstChild("Attachment"):Destroy() end
+        if v:FindFirstChild("AlignPosition") then v:FindFirstChild("AlignPosition"):Destroy() end
+        if v:FindFirstChild("Torque") then v:FindFirstChild("Torque"):Destroy() end
+        v.CanCollide = false
+        local Torque = Instance.new("Torque", v)
+        Torque.Torque = Vector3.new(100000,100000,100000)
+        local AlignPosition = Instance.new("AlignPosition", v)
+        local Attachment2 = Instance.new("Attachment", v)
+        Torque.Attachment0 = Attachment2
+        AlignPosition.MaxForce = 99999999999999999
+        AlignPosition.MaxVelocity = math.huge
+        AlignPosition.Responsiveness = 200
+        AlignPosition.Attachment0 = Attachment2
+        AlignPosition.Attachment1 = Attachment1
     end
-end)
+end
 
+-- Sound function
+local function playSound(soundId)
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://"..soundId
+    sound.Parent = SoundService
+    sound:Play()
+    sound.Ended:Connect(function() sound:Destroy() end)
+end
 
+playSound("2865227271") -- initial sound
 
-
-
-
-
-
--- AutoClick Script by Vini Hub
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
-
-local autoClickEnabled = false
-local clickDelay = 0.2 -- em segundos
-local clickX = 0.5 -- posição horizontal na tela (0 a 1)
-local clickY = 0.5 -- posição vertical na tela (0 a 1)
-
--- GUI AutoClick
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoClickGUI"
+ScreenGui.Name = "Lil0darkie6RingsGUI"
+ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0,200,0,200)
-MainFrame.Position = UDim2.new(0.7,0,0.7,0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(0,255,0)
+MainFrame.Size = UDim2.new(0,220,0,190)
+MainFrame.Position = UDim2.new(0.5,-110,0.5,-95)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0,102,51)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0,20)
+UICorner.Parent = MainFrame
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1,0,0,40)
 Title.Position = UDim2.new(0,0,0,0)
-Title.Text = "AutoClick"
-Title.BackgroundColor3 = Color3.fromRGB(50,50,50)
+Title.Text = "Lil0darkie6 Rings v8"
 Title.TextColor3 = Color3.fromRGB(255,255,255)
-Title.Font = Enum.Font.Fantasy
-Title.TextSize = 20
+Title.BackgroundColor3 = Color3.fromRGB(0,153,76)
+Title.Font = Enum.Font.Fondamento
+Title.TextSize = 22
 Title.Parent = MainFrame
 
--- Slider para velocidade (delay)
-local function createSlider(name, posY, min, max, default, callback)
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.8,0,0,30)
-    Label.Position = UDim2.new(0.1,0,posY,0)
-    Label.Text = name..": "..default
-    Label.BackgroundColor3 = Color3.fromRGB(255,153,51)
-    Label.TextColor3 = Color3.fromRGB(0,0,0)
-    Label.Font = Enum.Font.Fantasy
-    Label.TextSize = 16
-    Label.Parent = MainFrame
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0,20)
+TitleCorner.Parent = Title
 
-    local TextBox = Instance.new("TextBox")
-    TextBox.Size = UDim2.new(0.8,0,0,30)
-    TextBox.Position = UDim2.new(0.1,0,posY+0.05,0)
-    TextBox.PlaceholderText = default
-    TextBox.BackgroundColor3 = Color3.fromRGB(0,0,255)
-    TextBox.TextColor3 = Color3.fromRGB(255,255,255)
-    TextBox.Font = Enum.Font.Fantasy
-    TextBox.TextSize = 16
-    TextBox.Parent = MainFrame
-
-    TextBox.FocusLost:Connect(function(enter)
-        local value = tonumber(TextBox.Text)
-        if value then
-            value = math.clamp(value,min,max)
-            Label.Text = name..": "..value
-            TextBox.Text = ""
-            callback(value)
-        end
-    end)
-end
-
-createSlider("Delay(s)",0.15,0.01,2,clickDelay,function(val) clickDelay = val end)
-createSlider("X Position",0.3,0,1,clickX,function(val) clickX = val end)
-createSlider("Y Position",0.45,0,1,clickY,function(val) clickY = val end)
-
--- Toggle AutoClick
+-- Buttons
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0.8,0,0,40)
-ToggleButton.Position = UDim2.new(0.1,0,0.7,0)
+ToggleButton.Size = UDim2.new(0.8,0,0,35)
+ToggleButton.Position = UDim2.new(0.1,0,0.3,0)
 ToggleButton.Text = "Off"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
 ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
-ToggleButton.Font = Enum.Font.Fantasy
-ToggleButton.TextSize = 18
+ToggleButton.Font = Enum.Font.Fondamento
+ToggleButton.TextSize = 15
 ToggleButton.Parent = MainFrame
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0,10)
+ToggleCorner.Parent = ToggleButton
 
-ToggleButton.MouseButton1Click:Connect(function()
-    autoClickEnabled = not autoClickEnabled
-    ToggleButton.Text = autoClickEnabled and "On" or "Off"
-    ToggleButton.BackgroundColor3 = autoClickEnabled and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
-end)
+local DecreaseRadius = Instance.new("TextButton")
+DecreaseRadius.Size = UDim2.new(0.2,0,0,35)
+DecreaseRadius.Position = UDim2.new(0.1,0,0.6,0)
+DecreaseRadius.Text = "<"
+DecreaseRadius.BackgroundColor3 = Color3.fromRGB(255,255,0)
+DecreaseRadius.TextColor3 = Color3.fromRGB(0,0,0)
+DecreaseRadius.Font = Enum.Font.Fondamento
+DecreaseRadius.TextSize = 18
+DecreaseRadius.Parent = MainFrame
+local DecreaseCorner = Instance.new("UICorner")
+DecreaseCorner.CornerRadius = UDim.new(0,10)
+DecreaseCorner.Parent = DecreaseRadius
 
--- Menu arrastável
+local IncreaseRadius = Instance.new("TextButton")
+IncreaseRadius.Size = UDim2.new(0.2,0,0,35)
+IncreaseRadius.Position = UDim2.new(0.7,0,0.6,0)
+IncreaseRadius.Text = ">"
+IncreaseRadius.BackgroundColor3 = Color3.fromRGB(255,255,0)
+IncreaseRadius.TextColor3 = Color3.fromRGB(0,0,0)
+IncreaseRadius.Font = Enum.Font.Fondamento
+IncreaseRadius.TextSize = 18
+IncreaseRadius.Parent = MainFrame
+local IncreaseCorner = Instance.new("UICorner")
+IncreaseCorner.CornerRadius = UDim.new(0,10)
+IncreaseCorner.Parent = IncreaseRadius
+
+local RadiusDisplay = Instance.new("TextLabel")
+RadiusDisplay.Size = UDim2.new(0.4,0,0,35)
+RadiusDisplay.Position = UDim2.new(0.3,0,0.6,0)
+RadiusDisplay.Text = "Radius: 50"
+RadiusDisplay.BackgroundColor3 = Color3.fromRGB(255,255,0)
+RadiusDisplay.TextColor3 = Color3.fromRGB(0,0,0)
+RadiusDisplay.Font = Enum.Font.Fondamento
+RadiusDisplay.TextSize = 15
+RadiusDisplay.Parent = MainFrame
+local RadiusCorner = Instance.new("UICorner")
+RadiusCorner.CornerRadius = UDim.new(0,10)
+RadiusCorner.Parent = RadiusDisplay
+
+local Watermark = Instance.new("TextLabel")
+Watermark.Size = UDim2.new(1,0,0,20)
+Watermark.Position = UDim2.new(0,0,1,-20)
+Watermark.Text = "Lil0darkie6 Rings [V8] by Zeus!"
+Watermark.TextColor3 = Color3.fromRGB(255,255,255)
+Watermark.BackgroundTransparency = 1
+Watermark.Font = Enum.Font.Fondamento
+Watermark.TextSize = 14
+Watermark.Parent = MainFrame
+
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.new(0,30,0,30)
+MinimizeButton.Position = UDim2.new(1,-35,0,5)
+MinimizeButton.Text = "-"
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(0,255,0)
+MinimizeButton.TextColor3 = Color3.fromRGB(255,255,255)
+MinimizeButton.Font = Enum.Font.Fondamento
+MinimizeButton.TextSize = 15
+MinimizeButton.Parent = MainFrame
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0,15)
+MinimizeCorner.Parent = MinimizeButton
+
+-- Drag & Minimize Logic
 local dragging, dragInput, dragStart, startPos
 local function update(input)
     local delta = input.Position - dragStart
-    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
-
 MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = MainFrame.Position
@@ -997,7 +947,7 @@ MainFrame.InputBegan:Connect(function(input)
     end
 end)
 MainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
@@ -1007,22 +957,95 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Loop AutoClick
-spawn(function()
-    while true do
-        if autoClickEnabled then
-            local camera = workspace.CurrentCamera
-            local screenX = camera.ViewportSize.X * clickX
-            local screenY = camera.ViewportSize.Y * clickY
-            local ray = camera:ScreenPointToRay(screenX,screenY)
-            local result = workspace:Raycast(ray.Origin, ray.Direction*1000)
-            if result then
-                local target = result.Instance
-                if target and target:FindFirstChildOfClass("ClickDetector") then
-                    target:FindFirstChildOfClass("ClickDetector"):ClickDetector(target,LocalPlayer)
-                end
+-- Tornado / Ring Logic
+local radius = 50
+local height = 100
+local rotationSpeed = 0.5
+local attractionStrength = 1000
+local ringPartsEnabled = false
+local parts = {}
+
+local function RetainPart(part)
+    if part:IsA("BasePart") and not part.Anchored and part:IsDescendantOf(Workspace) then
+        if part:IsDescendantOf(LocalPlayer.Character) then return false end
+        part.CustomPhysicalProperties = PhysicalProperties.new(0,0,0,0,0)
+        part.CanCollide = false
+        return true
+    end
+    return false
+end
+
+local function addPart(part)
+    if RetainPart(part) and not table.find(parts,part) then
+        table.insert(parts,part)
+    end
+end
+local function removePart(part)
+    local idx = table.find(parts,part)
+    if idx then table.remove(parts,idx) end
+end
+
+for _, part in pairs(Workspace:GetDescendants()) do addPart(part) end
+Workspace.DescendantAdded:Connect(addPart)
+Workspace.DescendantRemoving:Connect(removePart)
+
+RunService.Heartbeat:Connect(function()
+    if not ringPartsEnabled then return end
+    local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        local center = humanoidRootPart.Position
+        for _, part in pairs(parts) do
+            if part.Parent and not part.Anchored then
+                local pos = part.Position
+                local dist = (Vector3.new(pos.X, center.Y, pos.Z) - center).Magnitude
+                local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
+                local newAngle = angle + math.rad(rotationSpeed)
+                local targetPos = Vector3.new(
+                    center.X + math.cos(newAngle) * math.min(radius, dist),
+                    center.Y + (height * math.abs(math.sin((pos.Y - center.Y)/height))),
+                    center.Z + math.sin(newAngle) * math.min(radius, dist)
+                )
+                local dir = (targetPos - part.Position).Unit
+                part.Velocity = dir * attractionStrength
             end
         end
-        wait(clickDelay)
     end
 end)
+
+-- Button functionality
+ToggleButton.MouseButton1Click:Connect(function()
+    ringPartsEnabled = not ringPartsEnabled
+    ToggleButton.Text = ringPartsEnabled and "Ring Parts On" or "Ring Parts Off"
+    ToggleButton.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(50,205,50) or Color3.fromRGB(255,0,0)
+    playSound("12221967")
+end)
+DecreaseRadius.MouseButton1Click:Connect(function()
+    radius = math.max(0,radius-5)
+    RadiusDisplay.Text = "Radius: "..radius
+    playSound("12221967")
+end)
+IncreaseRadius.MouseButton1Click:Connect(function()
+    radius = math.min(10000,radius+5)
+    RadiusDisplay.Text = "Radius: "..radius
+    playSound("12221967")
+end)
+
+-- Notifications
+local userId = Players:GetUserIdFromNameAsync("Toolb0x3")
+local thumbType = Enum.ThumbnailType.HeadShot
+local thumbSize = Enum.ThumbnailSize.Size420x420
+local content = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+StarterGui:SetCore("SendNotification",{Title="Lil0darkie6 Rings V8", Text="Modified", Icon=content, Duration=5})
+StarterGui:SetCore("SendNotification",{Title="Credits", Text="Original by Yumm Scriptblox", Icon=content, Duration=5})
+StarterGui:SetCore("SendNotification",{Title="Credits", Text="Edited by Zeus", Icon=content, Duration=5})
+
+-- Chat message
+local function SendChatMessage(msg)
+    if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+        local textChannel = TextChatService.TextChannels.RBXGeneral
+        textChannel:SendAsync(msg)
+    else
+        game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg,"All")
+    end
+end
+SendChatMessage("i love LIL0DARKIE6 ")

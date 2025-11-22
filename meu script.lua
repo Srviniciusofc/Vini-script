@@ -508,7 +508,22 @@ mini2.MouseButton1Click:Connect(function()
 end)
 
 
-esp:AddButton({
+
+
+
+
+local main = Window:MakeTab({
+	Name = "main",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+
+
+
+
+
+main:AddButton({
 	Name = "esp",
 	Callback = function()
       		print("button pressed")

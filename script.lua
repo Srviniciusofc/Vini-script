@@ -213,8 +213,7 @@ local tornadoAtivo = false
 main:AddButton({
     Name = "Tornado",
     Callback = function()
-        tornadoAtivo = not tornadoAtivo  -- alterna ligado/desligado
-        game.ReplicatedStorage.ToggleTornado:FireServer(tornadoAtivo)
+        Tornado()
     end
 })
 
@@ -721,78 +720,50 @@ end
 
 
 function Tornado()
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-    if not LocalPlayer then return end
+    local LocalPlayer = game.Players.LocalPlayer
+    if not LocalPlayer or not LocalPlayer.Character then return end
+    local hrp = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 
-    -- Espera o personagem/HRP
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        LocalPlayer.CharacterAdded:Wait()
-        hrp = LocalPlayer.Character and LocalPlayer.Character:WaitForChild("HumanoidRootPart", 5)
-        if not hrp then
-            warn("HumanoidRootPart não encontrado. Abortando tornado.")
-            return
-        end
-    end
-
-    -- Cria parte visual do tornado
     local tornado = Instance.new("Part")
-    tornado.Name = "Tornado_ULTRA"
-    tornado.Shape = Enum.PartType.Cylinder
-    tornado.Size = Vector3.new(40, 200, 40)
+    tornado.Name = "Tornado_OP"
+    tornado.Size = Vector3.new(50, 200, 50)
     tornado.Anchored = true
     tornado.CanCollide = false
-    tornado.Color = Color3.fromRGB(160, 160, 160)
+    tornado.Transparency = 0.5
+    tornado.Color = Color3.new(0.5,0.5,0.5)
     tornado.Material = Enum.Material.Neon
     tornado.Position = hrp.Position
     tornado.Parent = workspace
 
-    -- Configurações OP
-    local RAIO = 10000      -- Raio gigantesco
-    local ROTACAO = 8000    -- Velocidade de rotação
-    local FORCA = 10000     -- Força para levantar objetos
-    local DESTRUIR = true   -- Deleta objetos
+    local RAIO = 10000 -- raio gigante
+    tornado:SetAttribute("Active", true)
 
     task.spawn(function()
-        while tornado and tornado.Parent do
+        while tornado:GetAttribute("Active") do
             task.wait(0.03)
-            
-            -- Gira tornado
-            tornado.CFrame = tornado.CFrame * CFrame.Angles(0, math.rad(ROTACAO * 0.01), 0)
+            tornado.CFrame = tornado.CFrame * CFrame.Angles(0, math.rad(500), 0) -- gira rápido
 
-            -- Snapshot dos objetos no workspace
-            local descendants = workspace:GetDescendants()
-            for i = 1, #descendants do
-                local obj = descendants[i]
-                if obj and obj:IsA("BasePart") and not obj.Anchored then
-                    local ancestorModel = obj:FindFirstAncestorWhichIsA("Model")
-                    local belongsToPlayer = ancestorModel and Players:GetPlayerFromCharacter(ancestorModel)
-
-                    -- Ignora players
-                    if not belongsToPlayer then
-                        local distancia = (obj.Position - tornado.Position).Magnitude
-                        if distancia < RAIO then
-                            -- Se for inimigo com Humanoid, mata instantaneamente
-                            if ancestorModel and ancestorModel:FindFirstChild("Humanoid") then
-                                ancestorModel:Destroy()
+            local objs = workspace:GetDescendants()
+            for i = 1, #objs do
+                local obj = objs[i]
+                if obj:IsA("BasePart") and not obj.Anchored then
+                    local model = obj:FindFirstAncestorWhichIsA("Model")
+                    local isPlayer = model and game.Players:GetPlayerFromCharacter(model)
+                    if not isPlayer then
+                        local dist = (obj.Position - tornado.Position).Magnitude
+                        if dist < RAIO then
+                            if model and model:FindFirstChild("Humanoid") then
+                                -- mata NPC instantaneamente
+                                model:Destroy()
                             else
-                                -- Se for objeto normal, deleta ou aplica força
-                                if DESTRUIR then
-                                    obj:Destroy()
-                                else
-                                    local dir = (tornado.Position - obj.Position).Unit
-                                    local bv = Instance.new("BodyVelocity")
-                                    bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-                                    bv.Velocity = dir * FORCA
-                                    bv.Parent = obj
-                                    game:GetService("Debris"):AddItem(bv, 0.12)
-                                end
+                                -- deleta objeto normal
+                                obj:Destroy()
                             end
                         end
                     end
                 end
             end
         end
+        tornado:Destroy()
     end)
 end

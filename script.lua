@@ -1,5 +1,6 @@
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
 
+-- Criar janela
 local Window = redzlib:MakeWindow({
     Title = "Vini Hub",
     SubTitle = "by Vini 👀",
@@ -14,7 +15,7 @@ local inicioSection = mainTab:AddSection({
     Name = "Início"
 })
 
--- Botão
+-- BOTÃO
 inicioSection:AddButton({
     Name = "Fly",
     Callback = function()
@@ -22,7 +23,7 @@ inicioSection:AddButton({
     end
 })
 
--- Toggle
+-- TOGGLE
 local toggleExemplo = inicioSection:AddToggle({
     Name = "Toggle Exemplo",
     Default = false
@@ -31,19 +32,20 @@ toggleExemplo:Callback(function(value)
     print("Toggle:", value)
 end)
 
--- Slider
+-- SLIDER
 inicioSection:AddSlider({
     Name = "Speed",
     Min = 1,
     Max = 100,
     Default = 16,
-    Callback = function(value)
-        print("Speed:", value)
+    Callback = function(Value)
+        print("Speed:", Value)
     end
 })
 
 -- Seleciona a tab
 Window:SelectTab(mainTab)
+
 
 
 

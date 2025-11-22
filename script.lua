@@ -30,19 +30,29 @@ local MainTab = Window:MakeTab({
 })
 
 
+---------SECÇÃO--------
     local InicioSection = MainTab:AddSection({Name = "Inicio"})
 
+
+
 InicioSection:AddSlider({
-   Name = "WalkSpeed",
-   Range = {0, 300},
-   Increment = 1,
-   Suffix = "Speed",
-   CurrentValue = 16,
-   Flag = "Slider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-        Game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = (value)
-   end,
+    Name = "WalkSpeed",
+    Min = 16, -- padrão do Roblox
+    Max = 500, -- absurdo OP
+    Default = 16,
+    Color = Color3.fromRGB(0,0,0),
+    Increment = 1,
+    ValueName = "Speed",
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = Value
+        end
+    end
 })
+
 
 
 -- =====================

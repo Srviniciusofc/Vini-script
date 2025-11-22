@@ -717,45 +717,104 @@ end
 
 
 function Tornado()
-    print("Tornado ULTRA ativado!")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    if not LocalPlayer then return end
 
+    -- espera o personagem/HRP caso não exista ainda
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then
+        LocalPlayer.CharacterAdded:Wait()
+        hrp = LocalPlayer.Character and LocalPlayer.Character:WaitForChild("HumanoidRootPart", 5)
+        if not hrp then
+            warn("HumanoidRootPart não encontrado. Abortando tornado.")
+            return
+        end
+    end
+
+    -- cria parte visual do tornado
     local tornado = Instance.new("Part")
+    tornado.Name = "Tornado_ULTRA"
     tornado.Shape = Enum.PartType.Cylinder
     tornado.Size = Vector3.new(40, 200, 40)
     tornado.Anchored = true
     tornado.CanCollide = false
     tornado.Color = Color3.fromRGB(160, 160, 160)
     tornado.Material = Enum.Material.Neon
-    tornado.Position = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+    tornado.Position = hrp.Position
     tornado.Parent = workspace
 
-    -- CONFIG POTÊNCIA MÁXIMA
-    local raio = 10000         -- alcança praticamente o mapa inteiro
-    local velocidade = 8000     -- velocidade de giro extremamente alta
-    local destruir = true       -- deleta objetos
+    -- configurações (10k limite)
+    local raio = math.clamp(10000, 1, 10000)
+    local velocidade = math.clamp(8000, 1, 10000)
+    local destruir = true
 
+    -- loop do tornado em thread separada
     task.spawn(function()
-        while tornado.Parent do
+        while tornado and tornado.Parent do
             task.wait(0.03)
 
-            -- Girar tornado absurdamente rápido
-            tornado.CFrame = tornado.CFrame * CFrame.Angles(0, math.rad(velocidade * 0.01), 0)
+            -- gira tornado
+            local okC, errC = pcall(function()
+                tornado.CFrame = tornado.CFrame * CFrame.Angles(0, math.rad(velocidade * 0.01), 0)
+            end)
+            if not okC then
+                warn("Erro ao girar tornado:", errC)
+            end
 
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and not obj.Anchored then
-                    local distancia = (obj.Position - tornado.Position).Magnitude
+            -- pegamos snapshot dos descendentes para evitar problemas ao modificar a tabela
+            local descendants = workspace:GetDescendants()
+            for i = 1, #descendants do
+                local obj = descendants[i]
+                if not obj then
+                    -- pula nil
+                elseif not obj:IsA("BasePart") then
+                    -- pula não partes
+                elseif obj.Anchored then
+                    -- pula ancoradas
+                else
+                    -- checa se pertence a personagem de player
+                    local ancestorModel = obj:FindFirstAncestorWhichIsA("Model")
+                    local belongsToPlayer = false
+                    if ancestorModel then
+                        local plr = Players:GetPlayerFromCharacter(ancestorModel)
+                        if plr then
+                            belongsToPlayer = true
+                        end
+                    end
 
-                    if distancia < raio then
-                        if destruir then
-                            obj:Destroy()
-                        else
-                            -- puxa com força 10k
-                            local dir = (tornado.Position - obj.Position).Unit
-                            obj:ApplyImpulse(dir * 10000)
+                    if not belongsToPlayer then
+                        -- tudo bem mexer no objeto (não é parte de player)
+                        local ok, err = pcall(function()
+                            local distancia = (obj.Position - tornado.Position).Magnitude
+                            if distancia < raio then
+                                if destruir then
+                                    obj:Destroy()
+                                else
+                                    local dir = tornado.Position - obj.Position
+                                    if dir.Magnitude > 0 then
+                                        dir = dir.Unit
+                                        -- tenta ApplyImpulse, se não, BodyVelocity fallback
+                                        if typeof(obj.ApplyImpulse) == "function" then
+                                            -- ApplyImpulse pode lançar, usamos pcall
+                                            pcall(function() obj:ApplyImpulse(dir * 10000) end)
+                                        else
+                                            local bv = Instance.new("BodyVelocity")
+                                            bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                                            bv.Velocity = dir * 10000
+                                            bv.Parent = obj
+                                            game:GetService("Debris"):AddItem(bv, 0.12)
+                                        end
+                                    end
+                                end
+                            end
+                        end)
+                        if not ok then
+                            warn("Erro processando objeto no tornado:", err)
                         end
                     end
                 end
-            end
-        end
-    end)
+            end -- fim for
+        end -- fim while
+    end) -- fim task.spawn
 end

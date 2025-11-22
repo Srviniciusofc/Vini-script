@@ -29,23 +29,20 @@ local MainTab = Window:MakeTab({
     PremiumOnly = false
 })
 
-local InicioSection = MainTab:AddSection({Name = "Inicio"})
+
+    local InicioSection = MainTab:AddSection({Name = "Inicio"})
 
 InicioSection:AddSlider({
-    Name = "Velocidade",
-    Min = 16,
-    Max = 500,
-    Default = 16,
-    Callback = function(value)
-        speedValue = value
-        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = value
-        end
-    end
+   Name = "WalkSpeed",
+   Range = {0, 300},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "Slider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        Game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = (value)
+   end,
 })
-
 
 
 -- =====================

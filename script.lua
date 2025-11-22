@@ -728,7 +728,7 @@ end
 
 
 
-
+local tornadoAtivo = false
 
 function TornadoVoid()
 

@@ -719,40 +719,43 @@ end
 
 
 
-function TornadoVoid()
-    local Players = game:GetService("Players")
-    local workspaceDescendants = workspace:GetDescendants()
-    local TORNADO_POSITION = Vector3.new(0, 50, 0) -- centro do tornado
-    local TORNADO_RADIUS = 10000                   -- raio máximo
-    local FORCE = 10000                            -- força máxima
-    local DAMAGE = math.huge                       -- dano instantâneo
+local tornadoAtivo = false
+
+function Tornado()
+    local tornado = Instance.new("Part")
+    tornado.Size = Vector3.new(10, 200, 10)
+    tornado.Anchored = true
+    tornado.CanCollide = false
+    tornado.Transparency = 1
+    tornado.Position = Vector3.new(0, 50, 0) -- posição inicial
+    tornado.Parent = workspace
+
+    local RAIO = 10000    -- raio gigante
+    local FORCA = 10000   -- força enorme
+
+    tornadoAtivo = true
 
     task.spawn(function()
-        for _, obj in ipairs(workspaceDescendants) do
-            if obj:IsA("BasePart") then
-                local dist = (obj.Position - TORNADO_POSITION).Magnitude
-                if dist <= TORNADO_RADIUS then
-                    -- Ignora jogadores
-                    local model = obj:FindFirstAncestorWhichIsA("Model")
-                    local belongsToPlayer = model and Players:GetPlayerFromCharacter(model)
-                    if not belongsToPlayer then
-                        -- Mata NPC instantaneamente
-                        if model and model:FindFirstChild("Humanoid") then
-                            model:Destroy()
-                        else
-                            -- Joga objeto pro void
-                            local bv = Instance.new("BodyVelocity")
-                            bv.MaxForce = Vector3.new(FORCE, FORCE, FORCE)
-                            bv.Velocity = Vector3.new(0, 10000, 0)
-                            bv.Parent = obj
-                            game:GetService("Debris"):AddItem(bv, 0.1)
-                        end
-                    end
+        while tornadoAtivo do
+            task.wait(0.03)
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and not obj.Anchored then
+                    local dir = (Vector3.new(0, -10000, 0) - obj.Position) -- direção pro void
+                    obj.Velocity = dir.Unit * FORCA
                 end
             end
         end
+        tornado:Destroy()
     end)
 end
 
--- Ativar tornado
-TornadoVoid()
+-- Botão toggle
+main:AddButton({
+    Name = "Tornado Toggle",
+    Callback = function()
+        tornadoAtivo = not tornadoAtivo
+        if tornadoAtivo then
+            Tornado()
+        end
+    end
+})

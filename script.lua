@@ -719,6 +719,17 @@ end
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 local tornadoAtivo = false
 
 function Tornado()
@@ -740,8 +751,20 @@ function Tornado()
             task.wait(0.03)
             for _, obj in ipairs(workspace:GetDescendants()) do
                 if obj:IsA("BasePart") and not obj.Anchored then
-                    local dir = (Vector3.new(0, -10000, 0) - obj.Position) -- direção pro void
-                    obj.Velocity = dir.Unit * FORCA
+                    local ancestorModel = obj:FindFirstAncestorWhichIsA("Model")
+                    local pertencePlayer = false
+
+                    if ancestorModel then
+                        local plr = game.Players:GetPlayerFromCharacter(ancestorModel)
+                        if plr then
+                            pertencePlayer = true
+                        end
+                    end
+
+                    if not pertencePlayer then
+                        local dir = (Vector3.new(0, -10000, 0) - obj.Position)
+                        obj.Velocity = dir.Unit * FORCA
+                    end
                 end
             end
         end

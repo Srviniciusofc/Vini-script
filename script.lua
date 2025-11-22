@@ -18,32 +18,15 @@ Window:AddMinimizeButton({
 })
 
 -- Criar tab principal
-local main = Window:MakeTab({
-    Name = "Main",
-    Icon = "rbxassetid://18751483361"
-})
+local Main = Window:MakeTab({"Um", "cherry"})
 
 -- Criar seção
 local Section = main:AddSection({
     Name = "Início"
 })
 
--- Adicionar um texto tipo parágrafo
-local Paragraph = main:AddParagraph({
-    Name = "Aviso",
-    Text = "Eu avisei😁"
-})
 
--- Criar diálogo
-local Dialog = Window:Dialog({
-    Title = "Bem Vindo",
-    Text = "Olá, sou o Vinícius, criei esse script para te ajudar 🫡",
-    Options = {
-        {"Confirm", function() end},
-        {"Maybe", function() end},
-        {"Cancel", function() end}
-    }
-})
+
 
 -- BOTÃO
 main:AddButton({

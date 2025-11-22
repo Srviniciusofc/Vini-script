@@ -1,4 +1,3 @@
--- Carregar a RedzLib
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
 
 -- Criar janela
@@ -20,37 +19,33 @@ Window:AddMinimizeButton({
 -- Criar tab principal
 local mainTab = Window:MakeTab({"Main", "cherry"})
 
---section--
-
-local inicioSection = mainTab:AddSection({Name = "Início"})
-
-
--- Botão
-inicioSection:AddButton({
-Name = "Fly",
-Callback = function()
-  Fly()
-end
+-- Criar seção "Início"
+local inicioSection = mainTab:AddSection({
+    Name = "Início"
 })
 
+-- BOTÃO: Fly
+inicioSection:AddButton({
+    Name = "Fly",
+    Callback = function()
+        -- Certifique-se que a função Fly() existe
+        Fly()
+    end
+})
 
-
-
-
-
--- TOGGLE
-inicioSection:AddToggle({
+-- TOGGLE de exemplo
+local toggleExemplo = inicioSection:AddToggle({
     Name = "Toggle Exemplo",
     Description = "Um toggle de exemplo",
     Default = false
 })
 
-Toggle1:Callback(function(Value)
+toggleExemplo:Callback(function(Value)
     print("Toggle:", Value)
 end)
 
 -- Segundo toggle
-inicioSection:AddToggle({
+local toggleFly = inicioSection:AddToggle({
     Name = "Fly",
     Default = false,
     Callback = function(v)
@@ -58,8 +53,8 @@ inicioSection:AddToggle({
     end
 })
 
--- SLIDER
-main:AddSlider({
+-- SLIDER: Speed
+inicioSection:AddSlider({
     Name = "Speed",
     Min = 1,
     Max = 100,
@@ -69,45 +64,27 @@ main:AddSlider({
         local player = game.Players.LocalPlayer
         local char = player.Character or player.CharacterAdded:Wait()
         local humanoid = char:FindFirstChildOfClass("Humanoid")
-
         if humanoid then
             humanoid.WalkSpeed = Value
         end
     end
 })
 
-
-
-
-
-
-
+-- DROPDOWN: Lista de players
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 
-local selectedPlayer = nil
-local spectating = false
-
------------------------------------------------------
--- FUNÇÃO: Atualizar lista de players
------------------------------------------------------
 local function UpdatePlayerList()
     local list = {}
-
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             table.insert(list, plr.Name)
         end
     end
-
     return list
 end
 
------------------------------------------------------
--- DROPDOWN DE PLAYERS
------------------------------------------------------
-local PlayerDropdown = main:AddDropdown({
+local PlayerDropdown = inicioSection:AddDropdown({
     Name = "Lista de Jogadores",
     Options = UpdatePlayerList(),
     Callback = function(value)
@@ -115,97 +92,26 @@ local PlayerDropdown = main:AddDropdown({
     end
 })
 
------------------------------------------------------
--- BOTÃO: Atualizar lista
------------------------------------------------------
-main:AddButton({
+-- BOTÃO: Atualizar lista de players
+inicioSection:AddButton({
     Name = "Atualizar Lista",
     Callback = function()
-        local novaLista = UpdatePlayerList()
-        PlayerDropdown:Refresh(novaLista)
+        PlayerDropdown:Refresh(UpdatePlayerList())
     end
 })
 
------------------------------------------------------
--- FUNÇÃO: Começar a espectar
------------------------------------------------------
-local function StartSpectate()
-    if not selectedPlayer then return end
-
-    local target = Players:FindFirstChild(selectedPlayer)
-    if not target then return end
-    if not target.Character then return end
-
-    local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
-
-    spectating = true
-    Camera.CameraSubject = humanoid
-end
-
------------------------------------------------------
--- BOTÃO: Spectar Player
------------------------------------------------------
-main:AddButton({
-    Name = "Spectar Player",
-    Callback = function()
-        StartSpectate()
-    end
-})
-
------------------------------------------------------
--- FUNÇÃO: Parar de espectar
------------------------------------------------------
-local function StopSpectate()
-    spectating = false
-
-    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        Camera.CameraSubject = humanoid
-    end
-end
-
------------------------------------------------------
--- BOTÃO: Parar de Spectar
------------------------------------------------------
-main:AddButton({
-    Name = "Parar de Spectar",
-    Callback = function()
-        StopSpectate()
-    end
-})
-
------------------------------------------------------
--- Atualizar lista automaticamente quando players entram/saem
------------------------------------------------------
-Players.PlayerAdded:Connect(function()
-    PlayerDropdown:Refresh(UpdatePlayerList())
-end)
-
-Players.PlayerRemoving:Connect(function()
-    PlayerDropdown:Refresh(UpdatePlayerList())
-end)
-
-
-
-
-
-
-
-
-local tornadoAtivo = false
-
-main:AddButton({
+-- BOTÃO: Tornado
+inicioSection:AddButton({
     Name = "Tornado",
     Callback = function()
+        -- Certifique-se que a função TornadoVoid() existe
         TornadoVoid()
     end
 })
 
-
-
--- Seleciona a Tab
+-- Seleciona a tab
 Window:SelectTab(mainTab)
+
 
 
 

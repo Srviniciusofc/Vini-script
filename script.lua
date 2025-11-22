@@ -21,7 +21,7 @@ Window:AddMinimizeButton({
 local main = Window:MakeTab({"Main", "cherry"})
 
 -- Criar seção
-main:AddSection({
+Inicio:mainAddSection({
     Name = "Início"
 })
 
@@ -29,7 +29,7 @@ main:AddSection({
 
 
 -- BOTÃO
-main:AddButton({
+Inicio:AddButton({
     Name = "Fly",
     Callback = function()
         Fly()

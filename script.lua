@@ -21,7 +21,7 @@ Window:AddMinimizeButton({
 local main = Window:MakeTab({"Main", "cherry"})
 
 -- Criar seção
-main = main:AddSection({
+main:AddSection({
     Name = "Início"
 })
 

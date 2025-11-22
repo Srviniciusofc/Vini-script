@@ -208,12 +208,16 @@ end)
 
 
 
+local tornadoAtivo = false
+
 main:AddButton({
     Name = "Tornado",
     Callback = function()
-        Tornado()
+        tornadoAtivo = not tornadoAtivo  -- alterna ligado/desligado
+        game.ReplicatedStorage.ToggleTornado:FireServer(tornadoAtivo)
     end
 })
+
 
 
 -- Seleciona a Tab
@@ -721,7 +725,7 @@ function Tornado()
     local LocalPlayer = Players.LocalPlayer
     if not LocalPlayer then return end
 
-    -- espera o personagem/HRP caso não exista ainda
+    -- Espera o personagem/HRP
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then
         LocalPlayer.CharacterAdded:Wait()
@@ -732,7 +736,7 @@ function Tornado()
         end
     end
 
-    -- cria parte visual do tornado
+    -- Cria parte visual do tornado
     local tornado = Instance.new("Part")
     tornado.Name = "Tornado_ULTRA"
     tornado.Shape = Enum.PartType.Cylinder
@@ -744,77 +748,51 @@ function Tornado()
     tornado.Position = hrp.Position
     tornado.Parent = workspace
 
-    -- configurações (10k limite)
-    local raio = math.clamp(10000, 1, 10000)
-    local velocidade = math.clamp(8000, 1, 10000)
-    local destruir = true
+    -- Configurações OP
+    local RAIO = 10000      -- Raio gigantesco
+    local ROTACAO = 8000    -- Velocidade de rotação
+    local FORCA = 10000     -- Força para levantar objetos
+    local DESTRUIR = true   -- Deleta objetos
 
-    -- loop do tornado em thread separada
     task.spawn(function()
         while tornado and tornado.Parent do
             task.wait(0.03)
+            
+            -- Gira tornado
+            tornado.CFrame = tornado.CFrame * CFrame.Angles(0, math.rad(ROTACAO * 0.01), 0)
 
-            -- gira tornado
-            local okC, errC = pcall(function()
-                tornado.CFrame = tornado.CFrame * CFrame.Angles(0, math.rad(velocidade * 0.01), 0)
-            end)
-            if not okC then
-                warn("Erro ao girar tornado:", errC)
-            end
-
-            -- pegamos snapshot dos descendentes para evitar problemas ao modificar a tabela
+            -- Snapshot dos objetos no workspace
             local descendants = workspace:GetDescendants()
             for i = 1, #descendants do
                 local obj = descendants[i]
-                if not obj then
-                    -- pula nil
-                elseif not obj:IsA("BasePart") then
-                    -- pula não partes
-                elseif obj.Anchored then
-                    -- pula ancoradas
-                else
-                    -- checa se pertence a personagem de player
+                if obj and obj:IsA("BasePart") and not obj.Anchored then
                     local ancestorModel = obj:FindFirstAncestorWhichIsA("Model")
-                    local belongsToPlayer = false
-                    if ancestorModel then
-                        local plr = Players:GetPlayerFromCharacter(ancestorModel)
-                        if plr then
-                            belongsToPlayer = true
-                        end
-                    end
+                    local belongsToPlayer = ancestorModel and Players:GetPlayerFromCharacter(ancestorModel)
 
+                    -- Ignora players
                     if not belongsToPlayer then
-                        -- tudo bem mexer no objeto (não é parte de player)
-                        local ok, err = pcall(function()
-                            local distancia = (obj.Position - tornado.Position).Magnitude
-                            if distancia < raio then
-                                if destruir then
+                        local distancia = (obj.Position - tornado.Position).Magnitude
+                        if distancia < RAIO then
+                            -- Se for inimigo com Humanoid, mata instantaneamente
+                            if ancestorModel and ancestorModel:FindFirstChild("Humanoid") then
+                                ancestorModel:Destroy()
+                            else
+                                -- Se for objeto normal, deleta ou aplica força
+                                if DESTRUIR then
                                     obj:Destroy()
                                 else
-                                    local dir = tornado.Position - obj.Position
-                                    if dir.Magnitude > 0 then
-                                        dir = dir.Unit
-                                        -- tenta ApplyImpulse, se não, BodyVelocity fallback
-                                        if typeof(obj.ApplyImpulse) == "function" then
-                                            -- ApplyImpulse pode lançar, usamos pcall
-                                            pcall(function() obj:ApplyImpulse(dir * 10000) end)
-                                        else
-                                            local bv = Instance.new("BodyVelocity")
-                                            bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-                                            bv.Velocity = dir * 10000
-                                            bv.Parent = obj
-                                            game:GetService("Debris"):AddItem(bv, 0.12)
-                                        end
-                                    end
+                                    local dir = (tornado.Position - obj.Position).Unit
+                                    local bv = Instance.new("BodyVelocity")
+                                    bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                                    bv.Velocity = dir * FORCA
+                                    bv.Parent = obj
+                                    game:GetService("Debris"):AddItem(bv, 0.12)
                                 end
                             end
-                        end)
-                        if not ok then
-                            warn("Erro processando objeto no tornado:", err)
                         end
                     end
                 end
-            end -- fim for
-        end -- fim while
-    end) -- fim task.spawn
+            end
+        end
+    end)
 end

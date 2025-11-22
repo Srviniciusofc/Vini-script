@@ -730,70 +730,265 @@ end
 
 
 
-local tornadoAtivo = false
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
+local StarterGui = game:GetService("StarterGui")
+local HttpService = game:GetService("HttpService")
+local Workspace = game:GetService("Workspace")
 
-function Tornado()
-    local tornado = Instance.new("Part")
-    tornado.Size = Vector3.new(20, 200, 20)
-    tornado.Anchored = true
-    tornado.CanCollide = false
-    tornado.Transparency = 1
-    tornado.Position = Vector3.new(0, 50, 0) -- posição inicial
-    tornado.Parent = workspace
+local LocalPlayer = Players.LocalPlayer
 
-    local RAIO = 10000    -- raio gigante
-    local FORCA = 10000   -- força absurda
-
-    tornadoAtivo = true
-
-    task.spawn(function()
-        while tornadoAtivo do
-            task.wait(0.03)
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    local ancestorModel = obj:FindFirstAncestorWhichIsA("Model")
-                    local pertencePlayer = false
-
-                    -- Ignorar players
-                    if ancestorModel then
-                        local plr = game.Players:GetPlayerFromCharacter(ancestorModel)
-                        if plr then
-                            pertencePlayer = true
-                        end
-                    end
-
-                    if not pertencePlayer then
-                        -- Forçar até objetos ancorados a se moverem
-                        if obj.Anchored then
-                            obj.Anchored = false
-                        end
-
-                        -- Se for NPC (tem humanoid), matar instantaneamente
-                        if ancestorModel and ancestorModel:FindFirstChild("Humanoid") then
-                            ancestorModel:BreakJoints() -- elimina NPC
-                        end
-
-                        -- Jogar para o void
-                        local dir = (Vector3.new(0, -10000, 0) - obj.Position)
-                        obj.Velocity = dir.Unit * FORCA
-                    end
-                end
-            end
-        end
-        tornado:Destroy()
+-- Sound Effects
+local function playSound(soundId)
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://" .. soundId
+    sound.Parent = SoundService
+    sound:Play()
+    sound.Ended:Connect(function()
+        sound:Destroy()
     end)
 end
 
--- Botão para ativar/desativar
-main:AddButton({
-    Name = "Tornado Toggle",
-    Callback = function()
-        tornadoAtivo = not tornadoAtivo
-        if tornadoAtivo then
-            Tornado()
+playSound("2865227271") -- Initial sound
+
+-- GUI Creation
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SuperRingPartsGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 500)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -250)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 20)
+UICorner.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.Text = "Super Ring Parts V6 by Vini Hub"
+Title.TextColor3 = Color3.fromRGB(0, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(0, 204, 204)
+Title.Font = Enum.Font.Fondamento
+Title.TextSize = 22
+Title.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 20)
+TitleCorner.Parent = Title
+
+-- Configuration table
+local config = {
+    radius = 50,
+    height = 100,
+    rotationSpeed = 10,
+    attractionStrength = 1000,
+}
+
+-- Save/load functions
+local function saveConfig()
+    local configStr = HttpService:JSONEncode(config)
+    writefile("SuperRingPartsConfig.txt", configStr)
+end
+
+local function loadConfig()
+    if isfile("SuperRingPartsConfig.txt") then
+        local configStr = readfile("SuperRingPartsConfig.txt")
+        config = HttpService:JSONDecode(configStr)
+    end
+end
+
+loadConfig()
+
+-- Function to create control buttons/textboxes
+local function createControl(name, positionY, color, labelText, defaultValue, callback)
+    local DecreaseButton = Instance.new("TextButton")
+    DecreaseButton.Size = UDim2.new(0.2, 0, 0, 40)
+    DecreaseButton.Position = UDim2.new(0.1, 0, positionY, 0)
+    DecreaseButton.Text = "-"
+    DecreaseButton.BackgroundColor3 = color
+    DecreaseButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    DecreaseButton.Font = Enum.Font.Fondamento
+    DecreaseButton.TextSize = 18
+    DecreaseButton.Parent = MainFrame
+
+    local IncreaseButton = Instance.new("TextButton")
+    IncreaseButton.Size = UDim2.new(0.2, 0, 0, 40)
+    IncreaseButton.Position = UDim2.new(0.7, 0, positionY, 0)
+    IncreaseButton.Text = "+"
+    IncreaseButton.BackgroundColor3 = color
+    IncreaseButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    IncreaseButton.Font = Enum.Font.Fondamento
+    IncreaseButton.TextSize = 18
+    IncreaseButton.Parent = MainFrame
+
+    local Display = Instance.new("TextLabel")
+    Display.Size = UDim2.new(0.4, 0, 0, 40)
+    Display.Position = UDim2.new(0.3, 0, positionY, 0)
+    Display.Text = labelText .. ": " .. defaultValue
+    Display.BackgroundColor3 = Color3.fromRGB(255, 153, 51)
+    Display.TextColor3 = Color3.fromRGB(0, 0, 0)
+    Display.Font = Enum.Font.Fondamento
+    Display.TextSize = 18
+    Display.Parent = MainFrame
+
+    local TextBox = Instance.new("TextBox")
+    TextBox.Size = UDim2.new(0.8, 0, 0, 35)
+    TextBox.Position = UDim2.new(0.1, 0, positionY + 0.1, 0)
+    TextBox.PlaceholderText = "Enter " .. labelText
+    TextBox.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+    TextBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+    TextBox.Font = Enum.Font.Fondamento
+    TextBox.TextSize = 18
+    TextBox.Parent = MainFrame
+
+    local TextBoxCorner = Instance.new("UICorner")
+    TextBoxCorner.CornerRadius = UDim.new(0, 10)
+    TextBoxCorner.Parent = TextBox
+
+    DecreaseButton.MouseButton1Click:Connect(function()
+        local value = tonumber(Display.Text:match("%d+"))
+        value = math.max(0, value - 10)
+        Display.Text = labelText .. ": " .. value
+        callback(value)
+        playSound("12221967")
+        saveConfig()
+    end)
+
+    IncreaseButton.MouseButton1Click:Connect(function()
+        local value = tonumber(Display.Text:match("%d+"))
+        value = math.min(10000, value + 10)
+        Display.Text = labelText .. ": " .. value
+        callback(value)
+        playSound("12221967")
+        saveConfig()
+    end)
+
+    TextBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local newValue = tonumber(TextBox.Text)
+            if newValue then
+                newValue = math.clamp(newValue, 0, 10000)
+                Display.Text = labelText .. ": " .. newValue
+                TextBox.Text = ""
+                callback(newValue)
+                playSound("12221967")
+                saveConfig()
+            else
+                TextBox.Text = ""
+            end
+        end
+    end)
+end
+
+createControl("Radius", 0.2, Color3.fromRGB(153, 153, 0), "Radius", config.radius, function(value)
+    config.radius = value
+    saveConfig()
+end)
+
+createControl("Height", 0.4, Color3.fromRGB(153, 0, 153), "Height", config.height, function(value)
+    config.height = value
+    saveConfig()
+end)
+
+createControl("RotationSpeed", 0.6, Color3.fromRGB(0, 153, 153), "Rotation Speed", config.rotationSpeed, function(value)
+    config.rotationSpeed = value
+    saveConfig()
+end)
+
+createControl("AttractionStrength", 0.8, Color3.fromRGB(153, 0, 0), "Attraction Strength", config.attractionStrength, function(value)
+    config.attractionStrength = value
+    saveConfig()
+end)
+
+-- Tornado function
+local tornadoPartsEnabled = false
+local parts = {}
+
+local function RetainPart(part)
+    if part:IsA("BasePart") and not part.Anchored and part:IsDescendantOf(Workspace) then
+        if part.Parent == LocalPlayer.Character or part:IsDescendantOf(LocalPlayer.Character) then
+            return false
+        end
+        part.CanCollide = false
+        return true
+    end
+    return false
+end
+
+local function addPart(part)
+    if RetainPart(part) then
+        if not table.find(parts, part) then
+            table.insert(parts, part)
         end
     end
-})
+end
+
+for _, part in pairs(Workspace:GetDescendants()) do
+    addPart(part)
+end
+
+Workspace.DescendantAdded:Connect(addPart)
+Workspace.DescendantRemoving:Connect(function(part)
+    local index = table.find(parts, part)
+    if index then table.remove(parts, index) end
+end)
+
+local function toggleTornado()
+    tornadoPartsEnabled = not tornadoPartsEnabled
+end
+
+-- Heartbeat for tornado
+RunService.Heartbeat:Connect(function()
+    if not tornadoPartsEnabled then return end
+    local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        local center = humanoidRootPart.Position
+        for _, part in pairs(parts) do
+            if part.Parent and not part.Anchored then
+                local pos = part.Position
+                local distance = (Vector3.new(pos.X, center.Y, pos.Z) - center).Magnitude
+                local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
+                local newAngle = angle + math.rad(config.rotationSpeed)
+                local targetPos = Vector3.new(
+                    center.X + math.cos(newAngle) * math.min(config.radius, distance),
+                    center.Y + (config.height * (math.abs(math.sin((pos.Y - center.Y)/config.height)))),
+                    center.Z + math.sin(newAngle) * math.min(config.radius, distance)
+                )
+                local direction = (targetPos - part.Position).unit
+                part.Velocity = direction * config.attractionStrength
+            end
+        end
+    end
+end)
+
+-- Button to toggle tornado
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0.8, 0, 0, 40)
+ToggleButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+ToggleButton.Text = "Tornado Off"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+ToggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+ToggleButton.Font = Enum.Font.Fondamento
+ToggleButton.TextSize = 18
+ToggleButton.Parent = MainFrame
+
+ToggleButton.MouseButton1Click:Connect(function()
+    toggleTornado()
+    ToggleButton.Text = tornadoPartsEnabled and "Tornado On" or "Tornado Off"
+    ToggleButton.BackgroundColor3 = tornadoPartsEnabled and Color3.fromRGB(50, 205, 50) or Color3.fromRGB(160, 82, 45)
+    playSound("12221967")
+end)
+
+
+
+
 
 
 
@@ -803,84 +998,163 @@ main:AddButton({
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Configurações do tornado
-local config = {
-    radius = 50,
-    height = 100,
-    rotationSpeed = 10,
-    attractionStrength = 1000,
-}
+-- Variables
+local autoClickEnabled = false
+local clickDelay = 0.2 -- default seconds between clicks
 
--- Pasta para rastrear partes
-local parts = {}
-for _, part in pairs(Workspace:GetDescendants()) do
-    if part:IsA("BasePart") and not part.Anchored then
-        table.insert(parts, part)
-    end
+-- GUI Creation
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoClickerGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Main draggable frame
+local ClickFrame = Instance.new("Frame")
+ClickFrame.Size = UDim2.new(0, 120, 0, 120)
+ClickFrame.Position = UDim2.new(0.5, -60, 0.5, -60)
+ClickFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+ClickFrame.BorderSizePixel = 0
+ClickFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 60)
+UICorner.Parent = ClickFrame
+
+-- Label
+local Label = Instance.new("TextLabel")
+Label.Size = UDim2.new(1, 0, 0.5, 0)
+Label.Position = UDim2.new(0, 0, 0, 0)
+Label.BackgroundTransparency = 1
+Label.Text = "AutoClick"
+Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+Label.Font = Enum.Font.Fantasy
+Label.TextSize = 18
+Label.Parent = ClickFrame
+
+-- Toggle Button
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0.8, 0, 0.15, 0)
+ToggleButton.Position = UDim2.new(0.1, 0, 0.55, 0)
+ToggleButton.Text = "OFF"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+ToggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+ToggleButton.Font = Enum.Font.Fondamento
+ToggleButton.TextSize = 16
+ToggleButton.Parent = ClickFrame
+
+-- Slider for speed
+local SliderBar = Instance.new("Frame")
+SliderBar.Size = UDim2.new(0.8, 0, 0.1, 0)
+SliderBar.Position = UDim2.new(0.1, 0, 0.75, 0)
+SliderBar.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+SliderBar.BorderSizePixel = 0
+SliderBar.Parent = ClickFrame
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Size = UDim2.new(0.5, 0, 1, 0) -- default 50%
+SliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+SliderFill.BorderSizePixel = 0
+SliderFill.Parent = SliderBar
+
+local SliderButton = Instance.new("TextButton")
+SliderButton.Size = UDim2.new(0, 15, 1, 0)
+SliderButton.Position = UDim2.new(0.5, -7.5, 0, 0)
+SliderButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+SliderButton.BorderSizePixel = 0
+SliderButton.Text = ""
+SliderButton.Parent = SliderBar
+
+-- Drag frame functionality
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    ClickFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
-Workspace.DescendantAdded:Connect(function(part)
-    if part:IsA("BasePart") and not part.Anchored then
-        table.insert(parts, part)
+ClickFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = ClickFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
 end)
 
--- Flag do tornado
-local tornadoEnabled = false
+ClickFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
 
--- Função do tornado
-local function tornado()
-    RunService.Heartbeat:Connect(function()
-        if not tornadoEnabled then return end
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
 
-        local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if humanoidRootPart then
-            local center = humanoidRootPart.Position
-            for _, part in pairs(parts) do
-                if part.Parent and not part.Anchored then
-                    local pos = part.Position
-                    local distance = (Vector3.new(pos.X, center.Y, pos.Z) - center).Magnitude
-                    local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
-                    local newAngle = angle + math.rad(config.rotationSpeed)
-                    local targetPos = Vector3.new(
-                        center.X + math.cos(newAngle) * math.min(config.radius, distance),
-                        center.Y + (config.height * (math.abs(math.sin((pos.Y - center.Y) / config.height)))),
-                        center.Z + math.sin(newAngle) * math.min(config.radius, distance)
-                    )
-                    local directionToTarget = (targetPos - part.Position).Unit
-                    part.Velocity = directionToTarget * config.attractionStrength
+-- Toggle AutoClick function
+local function toggleAutoClick()
+    autoClickEnabled = not autoClickEnabled
+    ToggleButton.Text = autoClickEnabled and "ON" or "OFF"
+    ToggleButton.BackgroundColor3 = autoClickEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+end
+
+ToggleButton.MouseButton1Click:Connect(toggleAutoClick)
+
+-- Slider drag functionality
+local sliding = false
+SliderButton.MouseButton1Down:Connect(function()
+    sliding = true
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        sliding = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local barPos = SliderBar.AbsolutePosition.X
+        local barSize = SliderBar.AbsoluteSize.X
+        local mouseX = input.Position.X
+        local percent = math.clamp((mouseX - barPos)/barSize, 0, 1)
+        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        SliderButton.Position = UDim2.new(percent, -7.5, 0, 0)
+        -- Map percent to clickDelay (0.05s to 1s)
+        clickDelay = 1 - percent + 0.05
+    end
+end)
+
+-- AutoClick loop (clicks ClickDetectors under frame center)
+spawn(function()
+    while true do
+        if autoClickEnabled then
+            local centerPos = ClickFrame.AbsolutePosition + ClickFrame.AbsoluteSize/2
+            local ray = workspace.CurrentCamera:ScreenPointToRay(centerPos.X, centerPos.Y)
+            local raycastParams = RaycastParams.new()
+            raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+            local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
+            if raycastResult then
+                local target = raycastResult.Instance
+                if target then
+                    local clickDetector = target:FindFirstChildOfClass("ClickDetector")
+                    if clickDetector then
+                        clickDetector:ClickDetector(target, LocalPlayer)
+                    end
                 end
             end
         end
-    end)
-end
-
--- Criar GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 200, 0, 100)
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
-MainFrame.BackgroundColor3 = Color3.new(0,0,0)
-MainFrame.Parent = ScreenGui
-
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0.8, 0, 0, 40)
-ToggleButton.Position = UDim2.new(0.1, 0, 0.25, 0)
-ToggleButton.Text = "Ativar Tornado"
-ToggleButton.TextColor3 = Color3.new(1,1,1) -- números/branco
-ToggleButton.BackgroundColor3 = Color3.new(0,0,0)
-ToggleButton.Parent = MainFrame
-
-ToggleButton.MouseButton1Click:Connect(function()
-    tornadoEnabled = not tornadoEnabled
-    ToggleButton.Text = tornadoEnabled and "Desativar Tornado" or "Ativar Tornado"
-    if tornadoEnabled then
-        tornado() -- chama a função tornado
+        wait(clickDelay)
     end
 end)

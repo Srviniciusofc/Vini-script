@@ -131,6 +131,15 @@ InicioSection:AddButton({
 
 
 
+InicioSection:AddButton({
+	Name = "Tornado",
+	Callback = function()
+      		Tornado()
+  	end    
+})
+
+
+
 
 
 
@@ -637,7 +646,7 @@ end
 
 
 
-function Fly()
+function Tornado()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")

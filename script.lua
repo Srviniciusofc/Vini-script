@@ -37,7 +37,7 @@ main:AddButton({
 })
 
 -- TOGGLE
-local Toggle1 = main:AddToggle({
+main = main:AddToggle({
     Name = "Toggle Exemplo",
     Description = "Um toggle de exemplo",
     Default = false

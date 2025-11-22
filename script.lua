@@ -801,69 +801,86 @@ main:AddButton({
 
 
 
-local tornadoAtivo = false
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
-function TornadoBlocos()
-    local tornado = Instance.new("Part")
-    tornado.Size = Vector3.new(20, 200, 20)
-    tornado.Anchored = true
-    tornado.CanCollide = false
-    tornado.Transparency = 1
-    tornado.Position = Vector3.new(0, 50, 0) -- posição inicial
-    tornado.Parent = workspace
+local LocalPlayer = Players.LocalPlayer
 
-    local RAIO = 10000
-    local FORCA = 10000
+-- Configurações do tornado
+local config = {
+    radius = 50,
+    height = 100,
+    rotationSpeed = 10,
+    attractionStrength = 1000,
+}
 
-    tornadoAtivo = true
+-- Pasta para rastrear partes
+local parts = {}
+for _, part in pairs(Workspace:GetDescendants()) do
+    if part:IsA("BasePart") and not part.Anchored then
+        table.insert(parts, part)
+    end
+end
 
-    task.spawn(function()
-        while tornadoAtivo do
-            task.wait(0.03)
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    local ancestorModel = obj:FindFirstAncestorWhichIsA("Model")
-                    local pertencePlayer = false
-                    local ehNPC = false
+Workspace.DescendantAdded:Connect(function(part)
+    if part:IsA("BasePart") and not part.Anchored then
+        table.insert(parts, part)
+    end
+end)
 
-                    -- Ignorar players
-                    if ancestorModel then
-                        local plr = game.Players:GetPlayerFromCharacter(ancestorModel)
-                        if plr then
-                            pertencePlayer = true
-                        end
+-- Flag do tornado
+local tornadoEnabled = false
 
-                        -- Checa se é NPC
-                        if ancestorModel:FindFirstChild("Humanoid") then
-                            ehNPC = true
-                        end
-                    end
+-- Função do tornado
+local function tornado()
+    RunService.Heartbeat:Connect(function()
+        if not tornadoEnabled then return end
 
-                    -- Só pegar blocos soltos
-                    if not pertencePlayer and not ehNPC then
-                        -- Desancorar objetos
-                        if obj.Anchored then
-                            obj.Anchored = false
-                        end
-
-                        -- Jogar para o void
-                        local dir = Vector3.new(0, -10000, 0) - obj.Position
-                        obj.Velocity = dir.Unit * FORCA
-                    end
+        local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            local center = humanoidRootPart.Position
+            for _, part in pairs(parts) do
+                if part.Parent and not part.Anchored then
+                    local pos = part.Position
+                    local distance = (Vector3.new(pos.X, center.Y, pos.Z) - center).Magnitude
+                    local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
+                    local newAngle = angle + math.rad(config.rotationSpeed)
+                    local targetPos = Vector3.new(
+                        center.X + math.cos(newAngle) * math.min(config.radius, distance),
+                        center.Y + (config.height * (math.abs(math.sin((pos.Y - center.Y) / config.height)))),
+                        center.Z + math.sin(newAngle) * math.min(config.radius, distance)
+                    )
+                    local directionToTarget = (targetPos - part.Position).Unit
+                    part.Velocity = directionToTarget * config.attractionStrength
                 end
             end
         end
-        tornado:Destroy()
     end)
 end
 
--- Exemplo de botão para ativar/desativar
-main:AddButton({
-    Name = "Tornado de Blocos",
-    Callback = function()
-        tornadoAtivo = not tornadoAtivo
-        if tornadoAtivo then
-            TornadoBlocos()
-        end
+-- Criar GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
+MainFrame.BackgroundColor3 = Color3.new(0,0,0)
+MainFrame.Parent = ScreenGui
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0.8, 0, 0, 40)
+ToggleButton.Position = UDim2.new(0.1, 0, 0.25, 0)
+ToggleButton.Text = "Ativar Tornado"
+ToggleButton.TextColor3 = Color3.new(1,1,1) -- números/branco
+ToggleButton.BackgroundColor3 = Color3.new(0,0,0)
+ToggleButton.Parent = MainFrame
+
+ToggleButton.MouseButton1Click:Connect(function()
+    tornadoEnabled = not tornadoEnabled
+    ToggleButton.Text = tornadoEnabled and "Desativar Tornado" or "Ativar Tornado"
+    if tornadoEnabled then
+        tornado() -- chama a função tornado
     end
-})
+end)

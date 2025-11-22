@@ -18,7 +18,7 @@ Window:AddMinimizeButton({
 })
 
 -- Criar tab principal
-local Main = Window:MakeTab({"Um", "cherry"})
+local main = Window:MakeTab({"Main", "cherry"})
 
 -- Criar seção
 local Section = main:AddSection({

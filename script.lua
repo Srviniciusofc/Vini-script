@@ -723,6 +723,8 @@ end
 
 
 
+------TORNADO|--------
+----         V--------
 
 
 
@@ -731,7 +733,6 @@ end
 
 
 
--- The tags get stealed and i will not leak it
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -775,7 +776,7 @@ UICorner.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.Position = UDim2.new(0, 0, 0, 0)
-Title.Text = "Super Ring Parts V6 by lukas"
+Title.Text = "Tornado by Vini Hub"
 Title.TextColor3 = Color3.fromRGB(0, 0, 0)
 Title.BackgroundColor3 = Color3.fromRGB(0, 204, 204)
 Title.Font = Enum.Font.Fondamento
@@ -1407,3 +1408,5 @@ TextButton1.Active = true
 TextButton1.MouseButton1Click:Connect(function() 
 loadstring(game:HttpGet("https://pastebin.com/raw/ySHJdZpb",true))()
 end)
+function TornadoVoid()
+end

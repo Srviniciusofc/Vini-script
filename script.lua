@@ -3,7 +3,7 @@ local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao1
 
 -- Criar janela
 local Window = redzlib:MakeWindow({
-    Title = "Vini Hub : Blox Fruits",
+    Title = "Vini Hub",
     SubTitle = "by Vini 👀",
     SaveFolder = "ViniHubConfig"
 })
@@ -31,13 +31,13 @@ local Section = main:AddSection({
 -- Adicionar um texto tipo parágrafo
 local Paragraph = main:AddParagraph({
     Name = "Aviso",
-    Text = "Isso é um parágrafo.\nSegunda linha OK!"
+    Text = "Eu avisei😁"
 })
 
 -- Criar diálogo
 local Dialog = Window:Dialog({
-    Title = "Dialog",
-    Text = "Este é um diálogo",
+    Title = "Bem Vindo",
+    Text = "Olá, sou o Vinícius, criei esse script para te ajudar 🫡",
     Options = {
         {"Confirm", function() end},
         {"Maybe", function() end},
@@ -220,7 +220,7 @@ main:AddButton({
 
 
 -- Seleciona a Tab
-Window:SelectTab(main)
+Window:SelectTab(Main)
 
 
 
@@ -730,7 +730,7 @@ end
 
 
 
-
+function TornadoVoid()
 
 
 local Players = game:GetService("Players")
@@ -1408,5 +1408,4 @@ TextButton1.Active = true
 TextButton1.MouseButton1Click:Connect(function() 
 loadstring(game:HttpGet("https://pastebin.com/raw/ySHJdZpb",true))()
 end)
-function TornadoVoid()
 end

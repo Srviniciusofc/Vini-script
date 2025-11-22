@@ -733,271 +733,127 @@ end
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local SoundService = game:GetService("SoundService")
-local StarterGui = game:GetService("StarterGui")
-local HttpService = game:GetService("HttpService")
-local Workspace = game:GetService("Workspace")
-
 local LocalPlayer = Players.LocalPlayer
 
--- Sound Effects
-local function playSound(soundId)
-    local sound = Instance.new("Sound")
-    sound.SoundId = "rbxassetid://" .. soundId
-    sound.Parent = SoundService
-    sound:Play()
-    sound.Ended:Connect(function()
-        sound:Destroy()
-    end)
-end
+-- Controle de ativação
+local ringPartsEnabled = false
 
-playSound("2865227271") -- Initial sound
-
--- GUI Creation
+-- GUI principal
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SuperRingPartsGUI"
-ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "TornadoGUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 500)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -250)
+MainFrame.Size = UDim2.new(0, 300, 0, 200)
+MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0) -- posição inicial
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 204, 204)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 20)
-UICorner.Parent = MainFrame
-
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Position = UDim2.new(0, 0, 0, 0)
-Title.Text = "Super Ring Parts V6 by Vini Hub"
-Title.TextColor3 = Color3.fromRGB(0, 0, 0)
-Title.BackgroundColor3 = Color3.fromRGB(0, 204, 204)
-Title.Font = Enum.Font.Fondamento
-Title.TextSize = 22
+Title.Size = UDim2.new(1,0,0,30)
+Title.Position = UDim2.new(0,0,0,0)
+Title.Text = "Tornado V6 by Vini Hub"
+Title.BackgroundColor3 = Color3.fromRGB(50,50,50)
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.Fantasy
+Title.TextSize = 18
 Title.Parent = MainFrame
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 20)
-TitleCorner.Parent = Title
-
--- Configuration table
-local config = {
-    radius = 50,
-    height = 100,
-    rotationSpeed = 10,
-    attractionStrength = 1000,
-}
-
--- Save/load functions
-local function saveConfig()
-    local configStr = HttpService:JSONEncode(config)
-    writefile("SuperRingPartsConfig.txt", configStr)
-end
-
-local function loadConfig()
-    if isfile("SuperRingPartsConfig.txt") then
-        local configStr = readfile("SuperRingPartsConfig.txt")
-        config = HttpService:JSONDecode(configStr)
-    end
-end
-
-loadConfig()
-
--- Function to create control buttons/textboxes
-local function createControl(name, positionY, color, labelText, defaultValue, callback)
-    local DecreaseButton = Instance.new("TextButton")
-    DecreaseButton.Size = UDim2.new(0.2, 0, 0, 40)
-    DecreaseButton.Position = UDim2.new(0.1, 0, positionY, 0)
-    DecreaseButton.Text = "-"
-    DecreaseButton.BackgroundColor3 = color
-    DecreaseButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-    DecreaseButton.Font = Enum.Font.Fondamento
-    DecreaseButton.TextSize = 18
-    DecreaseButton.Parent = MainFrame
-
-    local IncreaseButton = Instance.new("TextButton")
-    IncreaseButton.Size = UDim2.new(0.2, 0, 0, 40)
-    IncreaseButton.Position = UDim2.new(0.7, 0, positionY, 0)
-    IncreaseButton.Text = "+"
-    IncreaseButton.BackgroundColor3 = color
-    IncreaseButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-    IncreaseButton.Font = Enum.Font.Fondamento
-    IncreaseButton.TextSize = 18
-    IncreaseButton.Parent = MainFrame
-
-    local Display = Instance.new("TextLabel")
-    Display.Size = UDim2.new(0.4, 0, 0, 40)
-    Display.Position = UDim2.new(0.3, 0, positionY, 0)
-    Display.Text = labelText .. ": " .. defaultValue
-    Display.BackgroundColor3 = Color3.fromRGB(255, 153, 51)
-    Display.TextColor3 = Color3.fromRGB(0, 0, 0)
-    Display.Font = Enum.Font.Fondamento
-    Display.TextSize = 18
-    Display.Parent = MainFrame
-
-    local TextBox = Instance.new("TextBox")
-    TextBox.Size = UDim2.new(0.8, 0, 0, 35)
-    TextBox.Position = UDim2.new(0.1, 0, positionY + 0.1, 0)
-    TextBox.PlaceholderText = "Enter " .. labelText
-    TextBox.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-    TextBox.TextColor3 = Color3.fromRGB(0, 0, 0)
-    TextBox.Font = Enum.Font.Fondamento
-    TextBox.TextSize = 18
-    TextBox.Parent = MainFrame
-
-    local TextBoxCorner = Instance.new("UICorner")
-    TextBoxCorner.CornerRadius = UDim.new(0, 10)
-    TextBoxCorner.Parent = TextBox
-
-    DecreaseButton.MouseButton1Click:Connect(function()
-        local value = tonumber(Display.Text:match("%d+"))
-        value = math.max(0, value - 10)
-        Display.Text = labelText .. ": " .. value
-        callback(value)
-        playSound("12221967")
-        saveConfig()
-    end)
-
-    IncreaseButton.MouseButton1Click:Connect(function()
-        local value = tonumber(Display.Text:match("%d+"))
-        value = math.min(10000, value + 10)
-        Display.Text = labelText .. ": " .. value
-        callback(value)
-        playSound("12221967")
-        saveConfig()
-    end)
-
-    TextBox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            local newValue = tonumber(TextBox.Text)
-            if newValue then
-                newValue = math.clamp(newValue, 0, 10000)
-                Display.Text = labelText .. ": " .. newValue
-                TextBox.Text = ""
-                callback(newValue)
-                playSound("12221967")
-                saveConfig()
-            else
-                TextBox.Text = ""
-            end
-        end
-    end)
-end
-
-createControl("Radius", 0.2, Color3.fromRGB(153, 153, 0), "Radius", config.radius, function(value)
-    config.radius = value
-    saveConfig()
-end)
-
-createControl("Height", 0.4, Color3.fromRGB(153, 0, 153), "Height", config.height, function(value)
-    config.height = value
-    saveConfig()
-end)
-
-createControl("RotationSpeed", 0.6, Color3.fromRGB(0, 153, 153), "Rotation Speed", config.rotationSpeed, function(value)
-    config.rotationSpeed = value
-    saveConfig()
-end)
-
-createControl("AttractionStrength", 0.8, Color3.fromRGB(153, 0, 0), "Attraction Strength", config.attractionStrength, function(value)
-    config.attractionStrength = value
-    saveConfig()
-end)
-
--- Tornado function
-local tornadoPartsEnabled = false
-local parts = {}
-
-local function RetainPart(part)
-    if part:IsA("BasePart") and not part.Anchored and part:IsDescendantOf(Workspace) then
-        if part.Parent == LocalPlayer.Character or part:IsDescendantOf(LocalPlayer.Character) then
-            return false
-        end
-        part.CanCollide = false
-        return true
-    end
-    return false
-end
-
-local function addPart(part)
-    if RetainPart(part) then
-        if not table.find(parts, part) then
-            table.insert(parts, part)
-        end
-    end
-end
-
-for _, part in pairs(Workspace:GetDescendants()) do
-    addPart(part)
-end
-
-Workspace.DescendantAdded:Connect(addPart)
-Workspace.DescendantRemoving:Connect(function(part)
-    local index = table.find(parts, part)
-    if index then table.remove(parts, index) end
-end)
-
-local function toggleTornado()
-    tornadoPartsEnabled = not tornadoPartsEnabled
-end
-
--- Heartbeat for tornado
-RunService.Heartbeat:Connect(function()
-    if not tornadoPartsEnabled then return end
-    local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if humanoidRootPart then
-        local center = humanoidRootPart.Position
-        for _, part in pairs(parts) do
-            if part.Parent and not part.Anchored then
-                local pos = part.Position
-                local distance = (Vector3.new(pos.X, center.Y, pos.Z) - center).Magnitude
-                local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
-                local newAngle = angle + math.rad(config.rotationSpeed)
-                local targetPos = Vector3.new(
-                    center.X + math.cos(newAngle) * math.min(config.radius, distance),
-                    center.Y + (config.height * (math.abs(math.sin((pos.Y - center.Y)/config.height)))),
-                    center.Z + math.sin(newAngle) * math.min(config.radius, distance)
-                )
-                local direction = (targetPos - part.Position).unit
-                part.Velocity = direction * config.attractionStrength
-            end
-        end
-    end
-end)
-
--- Button to toggle tornado
+-- Botão toggle tornado
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0.8, 0, 0, 40)
-ToggleButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+ToggleButton.Size = UDim2.new(0.8,0,0,40)
+ToggleButton.Position = UDim2.new(0.1,0,0.3,0)
 ToggleButton.Text = "Tornado Off"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-ToggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-ToggleButton.Font = Enum.Font.Fondamento
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
+ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.Font = Enum.Font.Fantasy
 ToggleButton.TextSize = 18
 ToggleButton.Parent = MainFrame
 
 ToggleButton.MouseButton1Click:Connect(function()
-    toggleTornado()
-    ToggleButton.Text = tornadoPartsEnabled and "Tornado On" or "Tornado Off"
-    ToggleButton.BackgroundColor3 = tornadoPartsEnabled and Color3.fromRGB(50, 205, 50) or Color3.fromRGB(160, 82, 45)
-    playSound("12221967")
+    ringPartsEnabled = not ringPartsEnabled
+    ToggleButton.Text = ringPartsEnabled and "Tornado On" or "Tornado Off"
+    ToggleButton.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(50,205,50) or Color3.fromRGB(255,0,0)
 end)
 
+-- Função de arrastar menu
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
 
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
 
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
 
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
 
+-- Configuração do tornado
+local config = {
+    radius = 50,
+    rotationSpeed = 10,
+    attractionStrength = 1000,
+}
 
+-- Partes do tornado
+local parts = {}
+for _, p in pairs(workspace:GetDescendants()) do
+    if p:IsA("BasePart") and not p.Anchored then
+        table.insert(parts,p)
+    end
+end
 
+workspace.DescendantAdded:Connect(function(p)
+    if p:IsA("BasePart") and not p.Anchored then
+        table.insert(parts,p)
+    end
+end)
 
+workspace.DescendantRemoving:Connect(function(p)
+    local idx = table.find(parts,p)
+    if idx then table.remove(parts,idx) end
+end)
 
-
-
-
-
+-- Loop tornado
+RunService.Heartbeat:Connect(function()
+    if not ringPartsEnabled then return end
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local center = char.HumanoidRootPart.Position
+        for _, part in pairs(parts) do
+            if part.Parent and not part.Anchored then
+                local angle = math.atan2(part.Position.Z - center.Z, part.Position.X - center.X)
+                local newAngle = angle + math.rad(config.rotationSpeed)
+                local target = Vector3.new(center.X + math.cos(newAngle)*config.radius,
+                                           part.Position.Y,
+                                           center.Z + math.sin(newAngle)*config.radius)
+                part.Velocity = (target - part.Position).Unit*config.attractionStrength
+            end
+        end
+    end
+end)
 
 
 
@@ -1012,102 +868,99 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Variáveis
+-- Controle
 local autoClickEnabled = false
-local clickDelay = 0.2 -- segundos entre cliques
+local clickDelay = 0.2
 
--- GUI Principal
+-- GUI AutoClick
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ExtraButtonsGUI"
-ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "AutoClickGUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Função para criar botões genéricos
-local function addButton(name, position, size, color, text, callback)
-    local btn = Instance.new("TextButton")
-    btn.Name = name
-    btn.Size = size or UDim2.new(0, 120, 0, 50)
-    btn.Position = position or UDim2.new(0.5, -60, 0.5, -25)
-    btn.BackgroundColor3 = color or Color3.fromRGB(0, 0, 255)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.Fantasy
-    btn.TextSize = 18
-    btn.Text = text or name
-    btn.Parent = ScreenGui
-    btn.Active = true
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 150, 0, 70)
+MainFrame.Position = UDim2.new(0.5, -75, 0.7, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0,255,0)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
 
-    local dragging, dragInput, dragStart, startPos
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,20)
+Title.Position = UDim2.new(0,0,0,0)
+Title.Text = "AutoClick"
+Title.BackgroundColor3 = Color3.fromRGB(50,50,50)
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.Fantasy
+Title.TextSize = 16
+Title.Parent = MainFrame
 
-    -- Permitir arrastar o botão
-    local function update(input)
-        local delta = input.Position - dragStart
-        btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                                  startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
+-- Botão toggle
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0.8,0,0,30)
+ToggleButton.Position = UDim2.new(0.1,0,0.4,0)
+ToggleButton.Text = "Off"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
+ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.Font = Enum.Font.Fantasy
+ToggleButton.TextSize = 16
+ToggleButton.Parent = MainFrame
 
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = btn.Position
-
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    btn.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
-
-    btn.MouseButton1Click:Connect(callback)
-end
-
--- Função para ativar/desativar AutoClick
-local function toggleAutoClick()
+ToggleButton.MouseButton1Click:Connect(function()
     autoClickEnabled = not autoClickEnabled
-    print("AutoClick:", autoClickEnabled and "ON" or "OFF")
+    ToggleButton.Text = autoClickEnabled and "On" or "Off"
+    ToggleButton.BackgroundColor3 = autoClickEnabled and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+end)
+
+-- Arrastar menu
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
--- Criar botão de AutoClick separadamente
-addButton("AutoClickButton",
-    UDim2.new(0.7, 0, 0.7, 0), -- posição inicial
-    UDim2.new(0, 120, 0, 50), -- tamanho
-    Color3.fromRGB(0, 255, 0), -- cor
-    "AutoClick", -- texto
-    toggleAutoClick -- função ao clicar
-)
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
 
--- Loop do AutoClick (clicando ClickDetectors sob o botão)
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Loop AutoClick
 RunService.Heartbeat:Connect(function()
-    if autoClickEnabled then
-        local btn = ScreenGui:FindFirstChild("AutoClickButton")
-        if btn then
-            local centerPos = btn.AbsolutePosition + btn.AbsoluteSize/2
-            local ray = workspace.CurrentCamera:ScreenPointToRay(centerPos.X, centerPos.Y)
-            local raycastParams = RaycastParams.new()
-            raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-            local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
-            if raycastResult then
-                local target = raycastResult.Instance
-                if target then
-                    local clickDetector = target:FindFirstChildOfClass("ClickDetector")
-                    if clickDetector then
-                        clickDetector:ClickDetector(target, LocalPlayer)
-                    end
-                end
+    if not autoClickEnabled then return end
+
+    local btn = MainFrame
+    local centerPos = btn.AbsolutePosition + btn.AbsoluteSize/2
+    local ray = workspace.CurrentCamera:ScreenPointToRay(centerPos.X, centerPos.Y)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    local raycastResult = workspace:Raycast(ray.Origin, ray.Direction*1000, raycastParams)
+    if raycastResult then
+        local target = raycastResult.Instance
+        if target then
+            local clickDetector = target:FindFirstChildOfClass("ClickDetector")
+            if clickDetector then
+                clickDetector:ClickDetector(target, LocalPlayer)
             end
         end
     end

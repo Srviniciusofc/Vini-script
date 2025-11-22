@@ -734,7 +734,7 @@ local tornadoAtivo = false
 
 function Tornado()
     local tornado = Instance.new("Part")
-    tornado.Size = Vector3.new(10, 200, 10)
+    tornado.Size = Vector3.new(20, 200, 20)
     tornado.Anchored = true
     tornado.CanCollide = false
     tornado.Transparency = 1
@@ -742,7 +742,7 @@ function Tornado()
     tornado.Parent = workspace
 
     local RAIO = 10000    -- raio gigante
-    local FORCA = 10000   -- força enorme
+    local FORCA = 10000   -- força absurda
 
     tornadoAtivo = true
 
@@ -750,10 +750,11 @@ function Tornado()
         while tornadoAtivo do
             task.wait(0.03)
             for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and not obj.Anchored then
+                if obj:IsA("BasePart") then
                     local ancestorModel = obj:FindFirstAncestorWhichIsA("Model")
                     local pertencePlayer = false
 
+                    -- Ignorar players
                     if ancestorModel then
                         local plr = game.Players:GetPlayerFromCharacter(ancestorModel)
                         if plr then
@@ -762,6 +763,17 @@ function Tornado()
                     end
 
                     if not pertencePlayer then
+                        -- Forçar até objetos ancorados a se moverem
+                        if obj.Anchored then
+                            obj.Anchored = false
+                        end
+
+                        -- Se for NPC (tem humanoid), matar instantaneamente
+                        if ancestorModel and ancestorModel:FindFirstChild("Humanoid") then
+                            ancestorModel:BreakJoints() -- elimina NPC
+                        end
+
+                        -- Jogar para o void
                         local dir = (Vector3.new(0, -10000, 0) - obj.Position)
                         obj.Velocity = dir.Unit * FORCA
                     end
@@ -772,7 +784,7 @@ function Tornado()
     end)
 end
 
--- Botão toggle
+-- Botão para ativar/desativar
 main:AddButton({
     Name = "Tornado Toggle",
     Callback = function()

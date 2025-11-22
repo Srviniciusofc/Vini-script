@@ -122,7 +122,7 @@ end)
 
 
 
-InicionSection:AddButton({
+InicioSection:AddButton({
 	Name = "Fly Gui V3",
 	Callback = function()
       		Fly()

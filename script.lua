@@ -203,7 +203,7 @@ main:AddButton({
 
 
 -- Seleciona a Tab
-Window:SelectTab(Main)
+Window:SelectTab(main)
 
 
 

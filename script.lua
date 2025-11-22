@@ -12,7 +12,7 @@ Window:AddMinimizeButton({
     Corner = { CornerRadius = UDim.new(35, 1) },
 })
 
-local main = Window:MakeTab({"Um", "cherry"})
+local main = Window:MakeTab({"Main", "cherry"})
 
 discord:AddDiscordInvite({
     Name = "AETHERLAND",
@@ -21,11 +21,11 @@ discord:AddDiscordInvite({
     Invite = "https://discord.gg/E7PPSwPh36",
 })
 
-Window:SelectTab(Tab1)
+Window:SelectTab(Main)
 
-local Section = Tab1:AddSection({"Section"})
+local Section = Main:AddSection({"Section"})
 
-local Paragraph = Tab1:AddParagraph({"Paragraph", "This is a Paragraph\nSecond Line"})
+local Paragraph = Main:AddParagraph({"Paragraph", "This is a Paragraph\nSecond Line"})
 
   local Dialog = Window:Dialog({
     Title = "Dialog",
@@ -43,11 +43,11 @@ local Paragraph = Tab1:AddParagraph({"Paragraph", "This is a Paragraph\nSecond L
     }
   })
   
-  Tab1:AddButton({"Print", function(Value)
+  main:AddButton({"Print", function(Value)
 print("Hello World!")
 end})
 
-local Toggle1 = Tab1:AddToggle({
+local Toggle1 = main:AddToggle({
   Name = "Toggle",
   Description = "This is a <font color='rgb(88, 101, 242)'>Toggle</font> Example",
   Default = false 
@@ -56,7 +56,7 @@ Toggle1:Callback(function(Value)
  
 end)
 
-Tab1:AddToggle({
+main:AddToggle({
     Name = "Toggle",
     Default = false,
     Callback = function(v)
@@ -64,7 +64,7 @@ Tab1:AddToggle({
     end
 })
 
-Tab1:AddSlider({
+main:AddSlider({
   Name = "Speed",
   Min = 1,
   Max = 100,
@@ -75,7 +75,7 @@ Tab1:AddSlider({
   end
 })
 
-local Dropdown = Tab1:AddDropdown({
+local Dropdown = main:AddDropdown({
   Name = "Players List",
   Description = "Select the <font color='rgb(88, 101, 242)'>Number</font>",
   Options = {"one", "two", "three"},
@@ -86,7 +86,7 @@ local Dropdown = Tab1:AddDropdown({
   end
 })
 
-Tab1:AddTextBox({
+main:AddTextBox({
   Name = "Name item",
   Description = "1 Item on 1 Server", 
   PlaceholderText = "item only",

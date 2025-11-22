@@ -23,7 +23,7 @@ discord:AddDiscordInvite({
 
 Window:SelectTab(main)
 
-local Section = Mmin:AddSection({"Section"})
+local Section = Mmin:AddSection({"início"})
 
 local Paragraph = Main:AddParagraph({"Paragraph", "This is a Paragraph\nSecond Line"})
 
@@ -43,7 +43,7 @@ local Paragraph = Main:AddParagraph({"Paragraph", "This is a Paragraph\nSecond L
     }
   })
   
-  main:AddButton({"Print", function(Value)
+  main:AddButton({"main", function(Value)
 print("Hello World!")
 end})
 
@@ -57,7 +57,7 @@ Toggle1:Callback(function(Value)
 end)
 
 main:AddToggle({
-    Name = "Toggle",
+    Name = "Fly",
     Default = false,
     Callback = function(v)
 

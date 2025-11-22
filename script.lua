@@ -644,7 +644,7 @@ end
 
 ---TORNADO---
 
-local
+
 
 function Tornado()
 

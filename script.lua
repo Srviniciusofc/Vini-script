@@ -18,26 +18,28 @@ Window:AddMinimizeButton({
 })
 
 -- Criar tab principal
-local main = Window:MakeTab({"Main", "cherry"})
+local mainTab = Window:MakeTab({"Main", "cherry"})
 
--- Criar seção
-main:AddSection({
-    Name = "Inicio"
+--section--
+
+local inicioSection = mainTab:AddSection({Name = "Início"})
+
+
+-- Botão
+inicioSection:AddButton({
+Name = "Fly",
+Callback = function()
+  Fly()
+end
 })
 
 
 
 
--- BOTÃO
-Inicio:AddButton({
-    Name = "Fly",
-    Callback = function()
-        Fly()
-    end
-})
+
 
 -- TOGGLE
-main = main:AddToggle({
+inicioSection:AddToggle({
     Name = "Toggle Exemplo",
     Description = "Um toggle de exemplo",
     Default = false
@@ -48,7 +50,7 @@ Toggle1:Callback(function(Value)
 end)
 
 -- Segundo toggle
-main:AddToggle({
+inicioSection:AddToggle({
     Name = "Fly",
     Default = false,
     Callback = function(v)
@@ -203,7 +205,7 @@ main:AddButton({
 
 
 -- Seleciona a Tab
-Window:SelectTab(main)
+Window:SelectTab(mainTab)
 
 
 

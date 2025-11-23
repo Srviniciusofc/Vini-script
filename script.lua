@@ -24,12 +24,11 @@ local MainTab = Window:MakeTab({
 })
 
 
-
-local InicionSection = MainTab:AddSection("Início")
-
+ MainTab:AddSection("Início")
 
 
-InicionSection:AddButton({
+
+MainTab:AddButton({
   Name = "Tornado",
   Debounce = 0.5,
   Callback = function()
@@ -57,7 +56,7 @@ inicioSection:AddSlider({
 })
 
 
-Window:SelectTab(MainTab)
+
 
 
 --espectar

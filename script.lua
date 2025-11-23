@@ -32,7 +32,7 @@ Tab:AddButton({
   Name = "Tornado",
   Debounce = 0.5,
   Callback = function()
-    Tornado()
+      Tornado()
   end
 })
 
@@ -68,7 +68,9 @@ Tab:AddSlider({
 
 
 
-local function Tornado()
+
+local Tornado
+function Tornado()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")

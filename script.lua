@@ -1380,3 +1380,61 @@ LocalPlayer.Idled:Connect(function()
         print("Anti-AFK ativado: ação simulada")
     end
 end)
+
+
+
+
+
+
+--TESTE
+
+
+
+
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local deletePartsEnabled = false -- Toggle inicial
+
+-- Toggle na sua tab "main"
+Tab2:AddToggle({
+    Name = "Deletar Objetos",
+    Default = false,
+    Callback = function(value)
+        deletePartsEnabled = value
+        print("Deletar Objetos:", deletePartsEnabled and "Ativado" or "Desativado")
+    end
+})
+
+-- Função para deletar as parts
+local function DeletePart(v)
+    if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") 
+        and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
+
+        -- Limpar possíveis constraints ou attachments
+        for _, x in next, v:GetChildren() do
+            if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") 
+            or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") 
+            or x:IsA("RocketPropulsion") then
+                x:Destroy()
+            end
+        end
+
+        if v:FindFirstChild("Attachment") then v.Attachment:Destroy() end
+        if v:FindFirstChild("AlignPosition") then v.AlignPosition:Destroy() end
+        if v:FindFirstChild("Torque") then v.Torque:Destroy() end
+
+        v:Destroy()
+    end
+end
+
+-- Loop para deletar partes automaticamente quando o toggle estiver ativo
+RunService.Heartbeat:Connect(function()
+    if deletePartsEnabled then
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            DeletePart(obj)
+        end
+    end
+end)

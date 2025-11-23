@@ -1396,45 +1396,43 @@ local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local deletePartsEnabled = false -- Toggle inicial
+local deleteEnemiesEnabled = false
 
--- Toggle na sua tab "main"
+-- Toggle na tab main
 Tab2:AddToggle({
-    Name = "Deletar Objetos",
+    Name = "Deletar Inimigos",
     Default = false,
     Callback = function(value)
-        deletePartsEnabled = value
-        print("Deletar Objetos:", deletePartsEnabled and "Ativado" or "Desativado")
+        deleteEnemiesEnabled = value
+        print("Deletar Inimigos:", deleteEnemiesEnabled and "Ativado" or "Desativado")
     end
 })
 
--- Função para deletar as parts
-local function DeletePart(v)
-    if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") 
-        and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
-
-        -- Limpar possíveis constraints ou attachments
-        for _, x in next, v:GetChildren() do
-            if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") 
-            or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") 
-            or x:IsA("RocketPropulsion") then
-                x:Destroy()
-            end
+-- Função para verificar se a part pertence a um jogador
+local function IsPlayerCharacter(obj)
+    if obj.Parent then
+        local player = Players:GetPlayerFromCharacter(obj.Parent)
+        if player then
+            return true
         end
+    end
+    return false
+end
 
-        if v:FindFirstChild("Attachment") then v.Attachment:Destroy() end
-        if v:FindFirstChild("AlignPosition") then v.AlignPosition:Destroy() end
-        if v:FindFirstChild("Torque") then v.Torque:Destroy() end
-
-        v:Destroy()
+-- Função para deletar inimigos
+local function DeleteEnemyPart(v)
+    if v:IsA("Part") and not v.Anchored and v.Name ~= "Handle" then
+        if not IsPlayerCharacter(v) then
+            v:Destroy()
+        end
     end
 end
 
 -- Loop para deletar partes automaticamente quando o toggle estiver ativo
 RunService.Heartbeat:Connect(function()
-    if deletePartsEnabled then
+    if deleteEnemiesEnabled then
         for _, obj in pairs(Workspace:GetDescendants()) do
-            DeletePart(obj)
+            DeleteEnemyPart(obj)
         end
     end
 end)

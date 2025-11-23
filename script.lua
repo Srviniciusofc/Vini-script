@@ -35,24 +35,22 @@ local MainTab = Window:MakeTab({
 
 
 
-InicioSection:AddSlider({
+InicioSection:AddTextbox({
     Name = "WalkSpeed",
-    Min = 16, -- padrão do Roblox
-    Max = 500, -- absurdo OP
-    Default = 16,
-    Color = Color3.fromRGB(0,0,0),
-    Increment = 1,
-    ValueName = "Speed",
+    Default = "16",
+    TextDisappear = false,
     Callback = function(Value)
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = Value
+        local num = tonumber(Value)
+        if num then
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = num
+            end
         end
     end
 })
-
 
 
 -- =====================

@@ -37,7 +37,6 @@ local MainTab = Window:MakeTab({
 
 InicioSection:AddTextbox({
     Name = "WalkSpeed",
-    Subtitle = "Normal é 16 máximo é 500",
     Default = "16",
     TextDisappear = false,
     Callback = function(Value)

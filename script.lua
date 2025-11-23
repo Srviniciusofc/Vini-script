@@ -17,10 +17,16 @@ local MobileButton = Minimizer:CreateMobileMinimizer({
 })
 
 
-
+--TAB 1
 local Tab = Window:MakeTab({
   Title = "Main",
   Icon = "Home"
+})
+
+--TAB 2
+local Tab2 = Window:MakeTab({
+  Title = "Config",
+  Icon = "gear"
 })
 
 
@@ -1341,4 +1347,36 @@ end)
 
 Players.PlayerRemoving:Connect(function()
     PlayerDropdown:Refresh(UpdatePlayerList())
+end)
+
+
+
+
+
+
+--ANTI-AFK
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local VirtualUser = game:GetService("VirtualUser")
+
+local antiAFKEnabled = false
+
+-- Toggle na sua tab "main"
+Tab2:AddToggle({
+    Name = "Anti-AFK",
+    Default = false,
+    Callback = function(value)
+        antiAFKEnabled = value
+    end
+})
+
+-- Conexão para prevenir AFK
+LocalPlayer.Idled:Connect(function()
+    if antiAFKEnabled then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+        print("Anti-AFK ativado: ação simulada")
+    end
 end)

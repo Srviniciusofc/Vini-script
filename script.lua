@@ -1389,3 +1389,60 @@ end)
 --TESTE
 
 
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local StarterGui = game:GetService("StarterGui")
+
+local TeleportEnabled = false -- DESATIVADO AO INICIAR
+
+local function Notify(title, text)
+    StarterGui:SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = 4
+    })
+end
+
+local function TeleportFromTouch(position)
+    if not TeleportEnabled then return end -- só funciona se o toggle estiver ligado
+
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local ray = Camera:ScreenPointToRay(position.X, position.Y)
+
+        local params = RaycastParams.new()
+        params.FilterType = Enum.RaycastFilterType.Blacklist
+        params.FilterDescendantsInstances = { LocalPlayer.Character }
+
+        local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+        if result then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(result.Position)
+            Notify("Teleporte", "Você foi teleportado para o local tocado!")
+        else
+            Notify("Erro", "Não encontrei nenhum lugar tocado no mapa!")
+        end
+    end
+end
+
+-- Detecta toque na tela
+UserInputService.InputBegan:Connect(function(input)
+    if TeleportEnabled and input.UserInputType == Enum.UserInputType.Touch then
+        TeleportFromTouch(input.Position)
+    end
+end)
+
+-- 🔥 Toggle na Redz Library
+Tab:AddToggle({
+    Title = "Teleport Touch",
+    Description = "Clique para teleportar para onde tocar na tela",
+    Default = false,
+    Callback = function(state)
+        TeleportEnabled = state
+        if state then
+            Notify("Teleport Ativado", "Toque na tela para teleportar.")
+        else
+            Notify("Teleport Desativado", "Toque não teleporta mais.")
+        end
+    end
+})

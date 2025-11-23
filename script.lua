@@ -24,5 +24,5 @@ local MainTab = Window:MakeTab({
 })
 
 
-local Tab = Window:MakeTab({ "Main", "Home" })
+local MainTab = Window:MakeTab({ "Main", "Home" })
 

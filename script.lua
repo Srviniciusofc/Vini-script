@@ -1390,15 +1390,13 @@ end)
 
 
 
-
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
 local deleteEnemiesEnabled = false
 
--- Toggle na tab main
+-- Toggle na sua tab main
 Tab2:AddToggle({
     Name = "Deletar Inimigos",
     Default = false,
@@ -1419,20 +1417,28 @@ local function IsPlayerCharacter(obj)
     return false
 end
 
--- Função para deletar inimigos
-local function DeleteEnemyPart(v)
-    if v:IsA("Part") and not v.Anchored and v.Name ~= "Handle" then
-        if not IsPlayerCharacter(v) then
-            v:Destroy()
-        end
+-- Função para deletar NPCs
+local function DeleteEnemy(obj)
+    -- Procuramos a raiz do modelo do NPC
+    local model = obj
+    while model.Parent and not model:IsA("Model") do
+        model = model.Parent
+    end
+
+    if model:IsA("Model") and not Players:GetPlayerFromCharacter(model) then
+        -- Deletar somente se não for jogador
+        model:Destroy()
     end
 end
 
--- Loop para deletar partes automaticamente quando o toggle estiver ativo
+-- Loop para deletar inimigos automaticamente quando o toggle estiver ativo
 RunService.Heartbeat:Connect(function()
     if deleteEnemiesEnabled then
         for _, obj in pairs(Workspace:GetDescendants()) do
-            DeleteEnemyPart(obj)
+            -- Ignora partes ancoradas do mapa
+            if not obj.Anchored then
+                DeleteEnemy(obj)
+            end
         end
     end
 end)

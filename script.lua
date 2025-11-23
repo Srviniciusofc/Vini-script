@@ -65,7 +65,7 @@ Tab:AddSlider({
 --TORNADO
 
 
-
+local Tab
 
 function Tornado()
 

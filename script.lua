@@ -1390,55 +1390,60 @@ end)
 
 
 
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local Players = game:GetService("Players")
+-- Variável de controle
+local ringPartsEnabled = false
 
-local deleteEnemiesEnabled = false
-
--- Toggle na sua tab main
-Tab2:AddToggle({
-    Name = "Deletar Inimigos",
-    Default = false,
-    Callback = function(value)
-        deleteEnemiesEnabled = value
-        print("Deletar Inimigos:", deleteEnemiesEnabled and "Ativado" or "Desativado")
+-- Função para decidir se pode deletar a part
+local function CanDeletePart(part)
+    if part:IsDescendantOf(LocalPlayer.Character) then return false end
+    for _, player in pairs(Players:GetPlayers()) do
+        if part:IsDescendantOf(player.Character) then return false end
     end
-})
+    if part.Anchored then return false end
+    return true
+end
 
--- Função para verificar se a part pertence a um jogador
-local function IsPlayerCharacter(obj)
-    if obj.Parent then
-        local player = Players:GetPlayerFromCharacter(obj.Parent)
-        if player then
-            return true
+-- Lista de partes rastreadas
+local parts = {}
+local function addPart(part)
+    if part:IsA("BasePart") and CanDeletePart(part) then
+        if not table.find(parts, part) then
+            table.insert(parts, part)
         end
     end
-    return false
 end
 
--- Função para deletar NPCs
-local function DeleteEnemy(obj)
-    -- Procuramos a raiz do modelo do NPC
-    local model = obj
-    while model.Parent and not model:IsA("Model") do
-        model = model.Parent
-    end
-
-    if model:IsA("Model") and not Players:GetPlayerFromCharacter(model) then
-        -- Deletar somente se não for jogador
-        model:Destroy()
-    end
+-- Inicializa lista com partes existentes
+for _, part in pairs(workspace:GetDescendants()) do
+    addPart(part)
 end
 
--- Loop para deletar inimigos automaticamente quando o toggle estiver ativo
+workspace.DescendantAdded:Connect(addPart)
+workspace.DescendantRemoving:Connect(function(part)
+    local index = table.find(parts, part)
+    if index then
+        table.remove(parts, index)
+    end
+end)
+
+-- Loop principal para deletar
 RunService.Heartbeat:Connect(function()
-    if deleteEnemiesEnabled then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            -- Ignora partes ancoradas do mapa
-            if not obj.Anchored then
-                DeleteEnemy(obj)
-            end
+    if not ringPartsEnabled then return end
+
+    for i = #parts, 1, -1 do
+        local part = parts[i]
+        if part and part.Parent and CanDeletePart(part) then
+            part:Destroy()
+            table.remove(parts, i)
         end
     end
 end)
+
+-- Botão na sua library
+Tab2:AddButton({
+    Name = "Deletar Objetos",
+    Callback = function()
+        ringPartsEnabled = not ringPartsEnabled
+        print("Deletar Objetos:", ringPartsEnabled and "Ativado" or "Desativado")
+    end
+})

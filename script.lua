@@ -1386,7 +1386,7 @@ end)
 
 
 
---TESTE
+--TELEPORTE POR TOQUE
 
 
 local Players = game:GetService("Players")
@@ -1434,7 +1434,7 @@ end)
 
 -- 🔥 Toggle na Redz Library
 Tab:AddToggle({
-    Title = "Teleport Touch",
+    Title = "Teleporte Por Toque",
     Description = "Clique para teleportar para onde tocar na tela",
     Default = false,
     Callback = function(state)
@@ -1446,3 +1446,195 @@ Tab:AddToggle({
         end
     end
 })
+
+
+
+
+
+
+
+
+
+-- TESTE
+
+
+
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
+
+local EnemiesFolder = workspace:WaitForChild("Enemies")
+
+-- Variáveis globais
+getgenv().AutoFollow = false
+getgenv().SafeHeight = 10
+
+-- Função de pegar inimigo mais próximo
+local function GetClosestEnemy()
+    local closest = nil
+    local shortestDistance = math.huge
+
+    for _, enemy in ipairs(EnemiesFolder:GetChildren()) do
+        if enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") then
+            if enemy.Humanoid.Health > 0 then
+                local dist = (HRP.Position - enemy.HumanoidRootPart.Position).Magnitude
+                if dist < shortestDistance then
+                    shortestDistance = dist
+                    closest = enemy
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+-- Loop principal
+RunService.Heartbeat:Connect(function()
+    if not getgenv().AutoFollow then return end
+
+    local enemy = GetClosestEnemy()
+    if enemy then
+        local enemyPos = enemy.HumanoidRootPart.Position
+        local targetPos = enemyPos + Vector3.new(0, getgenv().SafeHeight, 0)
+
+        HRP.CFrame = HRP.CFrame:Lerp(
+            CFrame.new(targetPos),
+            0.15
+        )
+    end
+end)
+
+-- UI (Redz Library)
+Tab:AddToggle({
+    Name = "Auto Seguir",
+    Default = false,
+    Callback = function(value)
+        getgenv().AutoFollow = value
+    end
+})
+
+Tab:AddSlider({
+    Name = "Altura Segura",
+    Min = 3,
+    Max = 30,
+    Default = 10,
+    Callback = function(value)
+        getgenv().SafeHeight = value
+    end
+})
+
+
+
+
+
+--TESTE 2
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
+
+-- Variáveis globais
+getgenv().SelectedPlayer = nil
+getgenv().FollowingPlayer = false
+getgenv().FollowDistance = 4 -- altura/distance segura
+getgenv().FollowSpeed = 0.15 -- velocidade do lerp
+
+-- Função pra pegar lista de players (menos você)
+local function GetPlayerList()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(list, plr.Name)
+        end
+    end
+    return list
+end
+
+-- Dropdown inicial
+local PlayerDropdown = Tab:AddDropdown({
+    Name = "Lista de Players",
+    Options = GetPlayerList(),
+    Callback = function(value)
+        getgenv().SelectedPlayer = value
+    end
+})
+
+-- Botão para atualizar lista
+Tab:AddButton({
+    Name = "Atualizar Lista",
+    Callback = function()
+        PlayerDropdown:Refresh(GetPlayerList())
+    end
+})
+
+-- Botão para seguir player selecionado
+Tab:AddButton({
+    Name = "Seguir Player",
+    Callback = function()
+        if getgenv().SelectedPlayer then
+            getgenv().FollowingPlayer = true
+        end
+    end
+})
+
+-- Botão para parar
+Tab:AddButton({
+    Name = "Parar de Seguir",
+    Callback = function()
+        getgenv().FollowingPlayer = false
+    end
+})
+
+-- Slider de distância segura
+Tab:AddSlider({
+    Name = "Distância Segura",
+    Min = 2,
+    Max = 20,
+    Default = 4,
+    Callback = function(value)
+        getgenv().FollowDistance = value
+    end
+})
+
+-- Slider de velocidade
+Tab:AddSlider({
+    Name = "Velocidade",
+    Min = 0.05,
+    Max = 0.5,
+    Default = 0.15,
+    Callback = function(value)
+        getgenv().FollowSpeed = value
+    end
+})
+
+-- Loop de seguir
+RunService.Heartbeat:Connect(function()
+    if not getgenv().FollowingPlayer then return end
+    if not getgenv().SelectedPlayer then return end
+
+    local target = Players:FindFirstChild(getgenv().SelectedPlayer)
+    if not target then return end
+    if not target.Character then return end
+
+    local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+    if not targetHRP then return end
+
+    -- Calcula posição segura atrás/acima do player
+    local targetPos = targetHRP.Position + Vector3.new(0, getgenv().FollowDistance, 0)
+
+    -- Move suavemente
+    HRP.CFrame = HRP.CFrame:Lerp(
+        CFrame.new(targetPos),
+        getgenv().FollowSpeed
+    )
+end)

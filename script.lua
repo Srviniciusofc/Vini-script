@@ -18,13 +18,13 @@ local MobileButton = Minimizer:CreateMobileMinimizer({
 
 
 
-local MainTab = Window:MakeTab({
+local Tab = Window:MakeTab({
   Title = "Main",
   Icon = "Home"
 })
 
 
-local InicionSection = MainTab:AddSection("Início")
+local InicionSection = Tab:AddSection("Início")
 
 
 
@@ -32,7 +32,7 @@ local InicionSection = MainTab:AddSection("Início")
 
 
 
-InicionSection:AddSlider({
+Tab:AddSlider({
     Name = "WalkSpeed",
     Min = 16, -- Velocidade mínima (padrão Roblox)
     Max = 700, -- Velocidade máxima

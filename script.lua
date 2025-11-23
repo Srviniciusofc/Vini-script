@@ -1540,16 +1540,16 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Variáveis do sistema
-local following = false
-local targetPlayer = nil
-local distance = 10
-local speed = 20
+-- Variáveis
+local Following = false
+local TargetPlayer = nil
+local Distance = 10
+local Speed = 20
 
--- Lista inicial de players
+-- Função para pegar lista de players
 local function getPlayers()
     local list = {}
-    for _, plr in pairs(Players:GetPlayers()) do
+    for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             table.insert(list, plr.Name)
         end
@@ -1557,88 +1557,75 @@ local function getPlayers()
     return list
 end
 
--- Dropdown
-local PlayerDropdown = Tab:AddDropdown("PlayerDropdown", {
-    Title = "Players",
-    Description = "Escolha um player para seguir",
-    Values = getPlayers(),
-    Multi = false,
-    Default = ""
-})
-
-PlayerDropdown:OnChanged(function(value)
-    targetPlayer = value
-end)
-
--- Botão para atualizar lista
-Tab:AddButton({
-    Title = "Atualizar Lista",
-    Description = "Atualiza os players disponíveis",
-    Callback = function()
-        PlayerDropdown:SetValues(getPlayers())
-    end
-})
-
--- Slider de distância
-Tab:AddSlider("DistanceSlider", {
-    Title = "Distância segura",
-    Default = 10,
-    Min = 5,
-    Max = 50,
-    Rounding = 0,
+-- DROPDOWN
+local PlayerDropdown = Tab:AddDropdown({
+    Name = "Players",
+    Options = getPlayers(),
     Callback = function(value)
-        distance = value
+        TargetPlayer = value
     end
 })
 
--- Slider de velocidade
-Tab:AddSlider("SpeedSlider", {
-    Title = "Velocidade de movimento",
-    Default = 20,
-    Min = 5,
-    Max = 100,
-    Rounding = 0,
-    Callback = function(value)
-        speed = value
-    end
-})
-
--- Botão para seguir player
+-- BOTÃO: Atualizar lista
 Tab:AddButton({
-    Title = "Seguir Player",
-    Description = "Começa a seguir o player selecionado",
+    Name = "Atualizar Lista",
     Callback = function()
-        if targetPlayer then
-            following = true
+        PlayerDropdown:Refresh(getPlayers())
+    end
+})
+
+-- BOTÃO: Seguir player
+Tab:AddButton({
+    Name = "Seguir Player",
+    Callback = function()
+        if TargetPlayer then
+            Following = true
         end
     end
 })
 
--- Botão para parar de seguir
+-- BOTÃO: Parar de seguir
 Tab:AddButton({
-    Title = "Parar de seguir",
-    Description = "Para de seguir o player",
+    Name = "Parar de seguir",
     Callback = function()
-        following = false
+        Following = false
     end
 })
 
--- Loop de seguir
+-- SLIDER: Distância segura
+Tab:AddSlider({
+    Name = "Distância Segura",
+    Min = 5,
+    Max = 50,
+    Default = 10,
+    Callback = function(value)
+        Distance = value
+    end
+})
+
+-- SLIDER: Velocidade
+Tab:AddSlider({
+    Name = "Velocidade",
+    Min = 5,
+    Max = 100,
+    Default = 20,
+    Callback = function(value)
+        Speed = value
+    end
+})
+
+-- LOOP DE SEGUIR
 RunService.Heartbeat:Connect(function()
-    if following and targetPlayer then
-        local plr = Players:FindFirstChild(targetPlayer)
+    if Following and TargetPlayer then
+        local plr = Players:FindFirstChild(TargetPlayer)
         if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            local myChar = LocalPlayer.Character
-            if myChar and myChar:FindFirstChild("HumanoidRootPart") then
-
-                local myHRP = myChar.HumanoidRootPart
-                local targetHRP = plr.Character.HumanoidRootPart
-
-                local targetPos = targetHRP.Position + Vector3.new(0, 0, distance)
-
+            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local targetHRP = plr.Character.HumanoidRootPart
+            if myHRP then
+                local targetPos = targetHRP.Position + Vector3.new(0, Distance, 0)
                 myHRP.CFrame = myHRP.CFrame:Lerp(
                     CFrame.new(targetPos, targetHRP.Position),
-                    speed / 100
+                    Speed / 100
                 )
             end
         end

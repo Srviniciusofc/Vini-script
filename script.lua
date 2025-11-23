@@ -28,13 +28,7 @@ local InicionSection = MainTab:AddSection("Início")
 
 
 
-InicionSection:AddButton({
-  Name = "Tornado",
-  Debounce = 0.5,
-  Callback = function()
-    
-  end
-})
+
 
 
 

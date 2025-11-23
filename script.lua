@@ -7,9 +7,6 @@ local Window = Library:MakeWindow({
 })
 
 
-  redzlib:SetTheme("Purple")
-
-
 --Botão de minimizar
 local Minimizer = Window:NewMinimizer({
   KeyCode = Enum.KeyCode.LeftControl

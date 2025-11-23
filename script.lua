@@ -1401,4 +1401,4 @@ local function toggleTornado()
     end
 end
 
-MainButton.MouseButton1Click:Connect(toggleTornado)
+InicioSection.MouseButton1Click:Connect(toggleTornado)

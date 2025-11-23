@@ -7,10 +7,42 @@ local Window = Library:MakeWindow({
 })
 
 
+
+
+--COR RGB BO TÍTULO
+
+local function Pulse(obj)
+    task.spawn(function()
+        while true do
+            -- arco-íris indo
+            for i = 0, 1, 0.005 do
+                if obj then
+                    obj.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+                end
+                task.wait(0.02)
+            end
+
+            -- arco-íris voltando
+            for i = 1, 0, -0.005 do
+                if obj then
+                    obj.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+                end
+                task.wait(0.02)
+            end
+        end
+    end)
+end
+
+-- 🌈 APLICAR SÓ NO TÍTULO
+if Window.Top then
+    Pulse(Window.Top)
+end
+
+
+
 local Minimizer = Window:NewMinimizer({
   KeyCode = Enum.KeyCode.LeftControl
 })
-
 local MobileButton = Minimizer:CreateMobileMinimizer({
   Image = "rbxassetid://0",
   BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -1389,61 +1421,3 @@ end)
 --TESTE
 
 
-
--- Variável de controle
-local ringPartsEnabled = false
-
--- Função para decidir se pode deletar a part
-local function CanDeletePart(part)
-    if part:IsDescendantOf(LocalPlayer.Character) then return false end
-    for _, player in pairs(Players:GetPlayers()) do
-        if part:IsDescendantOf(player.Character) then return false end
-    end
-    if part.Anchored then return false end
-    return true
-end
-
--- Lista de partes rastreadas
-local parts = {}
-local function addPart(part)
-    if part:IsA("BasePart") and CanDeletePart(part) then
-        if not table.find(parts, part) then
-            table.insert(parts, part)
-        end
-    end
-end
-
--- Inicializa lista com partes existentes
-for _, part in pairs(workspace:GetDescendants()) do
-    addPart(part)
-end
-
-workspace.DescendantAdded:Connect(addPart)
-workspace.DescendantRemoving:Connect(function(part)
-    local index = table.find(parts, part)
-    if index then
-        table.remove(parts, index)
-    end
-end)
-
--- Loop principal para deletar
-RunService.Heartbeat:Connect(function()
-    if not ringPartsEnabled then return end
-
-    for i = #parts, 1, -1 do
-        local part = parts[i]
-        if part and part.Parent and CanDeletePart(part) then
-            part:Destroy()
-            table.remove(parts, i)
-        end
-    end
-end)
-
--- Botão na sua library
-Tab2:AddButton({
-    Name = "Deletar Objetos",
-    Callback = function()
-        ringPartsEnabled = not ringPartsEnabled
-        print("Deletar Objetos:", ringPartsEnabled and "Ativado" or "Desativado")
-    end
-})

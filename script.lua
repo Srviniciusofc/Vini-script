@@ -129,7 +129,7 @@ UICorner.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.Position = UDim2.new(0, 0, 0, 0)
-Title.Text = "Super Ring Parts V6 by lukas"
+Title.Text = "TORNADO OP 🥵	by SrViniciusofc👻👻"
 Title.TextColor3 = Color3.fromRGB(0, 0, 0)
 Title.BackgroundColor3 = Color3.fromRGB(0, 204, 204)
 Title.Font = Enum.Font.Fondamento
@@ -144,7 +144,7 @@ TitleCorner.Parent = Title
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0.8, 0, 0, 40)
 ToggleButton.Position = UDim2.new(0.1, 0, 0.1, 0)
-ToggleButton.Text = "Ring Off"
+ToggleButton.Text = "Ring off"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 ToggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
 ToggleButton.Font = Enum.Font.Fondamento
@@ -502,28 +502,28 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 -- Get player thumbnail
-local userId = Players:GetUserIdFromNameAsync("Robloxlukasgames")
+local userId = Players:GetUserIdFromNameAsync("GlenAtkinson56422")
 local thumbType = Enum.ThumbnailType.HeadShot
 local thumbSize = Enum.ThumbnailSize.Size420x420
 local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
 
 StarterGui:SetCore("SendNotification", {
-    Title = "Hey",
-    Text = "Enjoy the Script!",
+    Title = "Ei",
+    Text = "Presta pra nada, aproveita o script 🖕",
     Icon = content,
     Duration = 5
 })
 
 StarterGui:SetCore("SendNotification", {
-    Title = "TIPS",
-    Text = "Click Textbox To edit Any of them",
+    Title = "Presta atenção gay",
+    Text = "Use com Responsabilidade",
     Icon = content,
     Duration = 5
 })
 
 StarterGui:SetCore("SendNotification", {
-    Title = "Credits",
-    Text = "On scriptblox!",
+    Title = "Script ativado",
+    Text = "O SCRIPT JA TA ATIVO GAY!!",
     Icon = content,
     Duration = 5
 })

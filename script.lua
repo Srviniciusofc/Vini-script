@@ -9,37 +9,10 @@ local Window = Library:MakeWindow({
 
 
 
---COR RGB BO TÍTULO
-
-local function Pulse(obj)
-    task.spawn(function()
-        while true do
-            -- arco-íris indo
-            for i = 0, 1, 0.005 do
-                if obj then
-                    obj.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
-                end
-                task.wait(0.02)
-            end
-
-            -- arco-íris voltando
-            for i = 1, 0, -0.005 do
-                if obj then
-                    obj.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
-                end
-                task.wait(0.02)
-            end
-        end
-    end)
-end
-
--- 🌈 APLICAR SÓ NO TÍTULO
-if Window.Top then
-    Pulse(Window.Top)
-end
+  redzlib:SetTheme("RGB")
 
 
-
+--Botão de minimizar
 local Minimizer = Window:NewMinimizer({
   KeyCode = Enum.KeyCode.LeftControl
 })

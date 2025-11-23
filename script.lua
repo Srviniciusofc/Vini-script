@@ -65,9 +65,11 @@ Tab:AddSlider({
 --TORNADO
 
 
-local Tab
 
-function Tornado()
+
+
+local function Tornado()
+    print("Tornado ativado")
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")

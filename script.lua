@@ -1329,3 +1329,76 @@ loadstring(game:HttpGet("https://pastebin.com/raw/ySHJdZpb",true))()
 end)
 
 end
+
+
+
+
+--// Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+--// GUI (simples)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local MainButton = Instance.new("TextButton")
+MainButton.Size = UDim2.new(0, 200, 0, 50)
+MainButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+MainButton.Text = "Ativar Tornado"
+MainButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+MainButton.Parent = ScreenGui
+
+--// Tornado Config
+local tornadoRadius = 1000
+local tornadoHeight = 50
+local tornadoSpeed = 0.05
+local attractionForce = 200
+local tornadoActive = false
+local tornadoConnection
+
+--// Função para iniciar/parar tornado
+local function toggleTornado()
+    tornadoActive = not tornadoActive
+
+    if tornadoActive then
+        MainButton.Text = "Desativar Tornado"
+        print("Tornado iniciado!")
+
+        local angle = 0
+        tornadoConnection = RunService.Heartbeat:Connect(function()
+            angle = angle + tornadoSpeed
+            local tornadoCenter = humanoidRootPart.Position
+
+            for _, part in ipairs(Workspace:GetDescendants()) do
+                if part:IsA("BasePart") and not part:IsDescendantOf(character) then
+                    local distance = (part.Position - tornadoCenter).Magnitude
+                    if distance <= tornadoRadius then
+                        local x = tornadoCenter.X + math.cos(angle) * distance
+                        local z = tornadoCenter.Z + math.sin(angle) * distance
+                        local y = tornadoCenter.Y + (tornadoHeight * math.sin(tick()))
+                        local targetPos = Vector3.new(x, y, z)
+
+                        local direction = (targetPos - part.Position).Unit
+                        part.Velocity = direction * attractionForce
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        MainButton.Text = "Ativar Tornado"
+        print("Tornado parado!")
+
+        if tornadoConnection then
+            tornadoConnection:Disconnect()
+            tornadoConnection = nil
+        end
+    end
+end
+
+MainButton.MouseButton1Click:Connect(toggleTornado)

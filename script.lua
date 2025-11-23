@@ -74,13 +74,7 @@ Tab:AddSlider({
 })
 
 
-Tab:AddButton({
-  Name = "Jump Infinito",
-  Debounce = 0.5,
-  Callback = function()
-    Jumpinfinito()
-  end
-})
+
 
 
 

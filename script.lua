@@ -1,40 +1,34 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"))()
 
 local Window = Library:MakeWindow({
-  Title = "Vini Hub : 👻👻",
-  SubTitle = "dev by SrVinicius",
-  ScriptFolder = "redz-library-V5"
+    Title = "<font color='rgb(255,0,0)'>Vini Hub : 👻👻</font>",
+    SubTitle = "<font color='rgb(255,0,0)'>dev by SrVinicius</font>",
+    ScriptFolder = "redz-library-V5"
 })
 
 
-
-
 --RGB Título 
-local function Pulse(obj)
-    task.spawn(function()
-        while obj do
-            for i = 0, 1, 0.005 do
-                if obj then
-                    obj.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
-                end
-                task.wait(0.02)
-            end
+task.spawn(function()
+    while task.wait() do
+        local hue = (tick() % 5) / 5
+        local color = Color3.fromHSV(hue, 1, 1)
+        local r = math.floor(color.R * 255)
+        local g = math.floor(color.G * 255)
+        local b = math.floor(color.B * 255)
 
-            for i = 1, 0, -0.005 do
-                if obj then
-                    obj.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
-                end
-                task.wait(0.02)
-            end
-        end
-    end)
-end
+        pcall(function()
+            Window:SetTitle(string.format(
+                "<font color='rgb(%d,%d,%d)'>Vini Hub : 👻👻</font>",
+                r, g, b
+            ))
 
--- 🌈 APLICAR NO TÍTULO DA REDZ V5
-if Window.WindowFrame and Window.WindowFrame.Top then
-    Pulse(Window.WindowFrame.Top)
-end
-
+            Window:SetSubTitle(string.format(
+                "<font color='rgb(%d,%d,%d)'>dev by SrVinicius</font>",
+                r, g, b
+            ))
+        end)
+    end
+end)
 
 
 

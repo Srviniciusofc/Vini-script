@@ -9,7 +9,36 @@ local Window = Library:MakeWindow({
 
 
 
-  redzlib:SetTheme("RGB")
+--RGB Título 
+local function Pulse(obj)
+    task.spawn(function()
+        while obj do
+            for i = 0, 1, 0.005 do
+                if obj then
+                    obj.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+                end
+                task.wait(0.02)
+            end
+
+            for i = 1, 0, -0.005 do
+                if obj then
+                    obj.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+                end
+                task.wait(0.02)
+            end
+        end
+    end)
+end
+
+-- 🌈 APLICAR NO TÍTULO DA REDZ V5
+if Window.WindowFrame and Window.WindowFrame.Top then
+    Pulse(Window.WindowFrame.Top)
+end
+
+
+
+
+  
 
 
 --Botão de minimizar

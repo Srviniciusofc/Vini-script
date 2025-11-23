@@ -1260,27 +1260,85 @@ end
 
 
 
---INFI JUMP
+--ESPECTAR
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
-local TextButton1 = Instance.new("TextButton") 
-TextButton1.Parent = MainFrame
-TextButton1.Name = "Inf jump"
-TextButton1.BackgroundColor3 = Color3.fromRGB(0,255,0)
-TextButton1.BackgroundTransparency = 0
-TextButton1.BorderSizePixel = 1
-TextButton1.BorderColor3 = Color3.fromRGB(17,17,17)
-TextButton1.Position = UDim2.new(0.7,0,1)
-TextButton1.Size = UDim2.new(0.08,0,0.1)
-TextButton1.Font = Enum.Font.Legacy
-TextButton1.TextColor3 = Color3.fromRGB(242,243,243)
-TextButton1.Text = "Inf jump"
-TextButton1.TextSize = 18
-TextButton1.TextScaled = true
-TextButton1.TextWrapped = true
-TextButton1.Visible = true
-TextButton1.Active = true
+local selectedPlayer = nil
+local spectating = false
 
-TextButton1.MouseButton1Click:Connect(function() 
-local InfiniteJumpEnabled = true game:GetService("UserInputService").JumpRequest:connect(function() 	if InfiniteJumpEnabled then 		game:GetService"Players".LocalPlayer.Character:FindFirstChildOfClass'Humanoid':ChangeState("Jumping") 	end end)
+-- FUNÇÃO: Atualizar lista de players
+local function UpdatePlayerList()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(list, plr.Name)
+        end
+    end
+    return list
+end
+
+-- DROPDOWN DE PLAYERS
+local PlayerDropdown = Tab:AddDropdown({
+    Name = "Lista de Jogadores",
+    Options = UpdatePlayerList(),
+    Callback = function(value)
+        selectedPlayer = value
+    end
+})
+
+-- BOTÃO: Atualizar lista
+Tab:AddButton({
+    Name = "Atualizar Lista",
+    Callback = function()
+        local novaLista = UpdatePlayerList()
+        PlayerDropdown:Refresh(novaLista)
+    end
+})
+
+-- FUNÇÃO: Começar a espectar
+local function StartSpectate()
+    if not selectedPlayer then return end
+    local target = Players:FindFirstChild(selectedPlayer)
+    if not target or not target.Character then return end
+    local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    spectating = true
+    Camera.CameraSubject = humanoid
+end
+
+-- BOTÃO: Spectar Player
+Tab:AddButton({
+    Name = "Spectar Player",
+    Callback = function()
+        StartSpectate()
+    end
+})
+
+-- FUNÇÃO: Parar de espectar
+local function StopSpectate()
+    spectating = false
+    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        Camera.CameraSubject = humanoid
+    end
+end
+
+-- BOTÃO: Parar de Spectar
+Tab:AddButton({
+    Name = "Parar de Spectar",
+    Callback = function()
+        StopSpectate()
+    end
+})
+
+-- Atualizar lista automaticamente quando players entram/saem
+Players.PlayerAdded:Connect(function()
+    PlayerDropdown:Refresh(UpdatePlayerList())
+end)
+
+Players.PlayerRemoving:Connect(function()
+    PlayerDropdown:Refresh(UpdatePlayerList())
 end)

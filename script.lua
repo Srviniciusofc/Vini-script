@@ -1,16 +1,16 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"))()
 
 local Window = Library:MakeWindow({
-  Title = "Nice Hub : Cool Game",
-  SubTitle = "dev by real_redz",
+  Title = "Vini Hub",
+  SubTitle = "Dev by SrVinicius👻👻",
   ScriptFolder = "redz-library-V5"
 })
 
 
---Botão de minimizar
 local Minimizer = Window:NewMinimizer({
   KeyCode = Enum.KeyCode.LeftControl
 })
+
 local MobileButton = Minimizer:CreateMobileMinimizer({
   Image = "rbxassetid://0",
   BackgroundColor3 = Color3.fromRGB(0, 0, 0)

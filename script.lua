@@ -57,7 +57,7 @@ inicioSection:AddSlider({
 })
 
 
-
+Window:SelectTab(MainTab)
 
 
 --espectar

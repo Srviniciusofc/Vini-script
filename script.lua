@@ -32,12 +32,11 @@ InicionSection:AddButton({
   Name = "Tornado",
   Debounce = 0.5,
   Callback = function()
-    Tornado()
+    
   end
 })
 
 
--- local inicioSection = mainTab:AddSection({ Name = "Início" })
 
 InicionSection:AddSlider({
     Name = "WalkSpeed",

@@ -1538,21 +1538,18 @@ Tab:AddSlider({
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HRP = Character:WaitForChild("HumanoidRootPart")
 
--- Variáveis globais
-getgenv().SelectedPlayer = nil
-getgenv().FollowingPlayer = false
-getgenv().FollowDistance = 4 -- altura/distance segura
-getgenv().FollowSpeed = 0.15 -- velocidade do lerp
+-- Variáveis do sistema
+local following = false
+local targetPlayer = nil
+local distance = 10
+local speed = 20
 
--- Função pra pegar lista de players (menos você)
-local function GetPlayerList()
+-- Lista inicial de players
+local function getPlayers()
     local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
+    for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             table.insert(list, plr.Name)
         end
@@ -1560,81 +1557,90 @@ local function GetPlayerList()
     return list
 end
 
--- Dropdown inicial
-local PlayerDropdown = Tab:AddDropdown({
-    Name = "Lista de Players",
-    Options = GetPlayerList(),
-    Callback = function(value)
-        getgenv().SelectedPlayer = value
-    end
+-- Dropdown
+local PlayerDropdown = Tab:AddDropdown("PlayerDropdown", {
+    Title = "Players",
+    Description = "Escolha um player para seguir",
+    Values = getPlayers(),
+    Multi = false,
+    Default = ""
 })
+
+PlayerDropdown:OnChanged(function(value)
+    targetPlayer = value
+end)
 
 -- Botão para atualizar lista
 Tab:AddButton({
-    Name = "Atualizar Lista",
+    Title = "Atualizar Lista",
+    Description = "Atualiza os players disponíveis",
     Callback = function()
-        PlayerDropdown:Refresh(GetPlayerList())
+        PlayerDropdown:SetValues(getPlayers())
     end
 })
 
--- Botão para seguir player selecionado
-Tab:AddButton({
-    Name = "Seguir Player",
-    Callback = function()
-        if getgenv().SelectedPlayer then
-            getgenv().FollowingPlayer = true
-        end
-    end
-})
-
--- Botão para parar
-Tab:AddButton({
-    Name = "Parar de Seguir",
-    Callback = function()
-        getgenv().FollowingPlayer = false
-    end
-})
-
--- Slider de distância segura
-Tab:AddSlider({
-    Name = "Distância Segura",
-    Min = 2,
-    Max = 20,
-    Default = 4,
+-- Slider de distância
+Tab:AddSlider("DistanceSlider", {
+    Title = "Distância segura",
+    Default = 10,
+    Min = 5,
+    Max = 50,
+    Rounding = 0,
     Callback = function(value)
-        getgenv().FollowDistance = value
+        distance = value
     end
 })
 
 -- Slider de velocidade
-Tab:AddSlider({
-    Name = "Velocidade",
-    Min = 0.05,
-    Max = 0.5,
-    Default = 0.15,
+Tab:AddSlider("SpeedSlider", {
+    Title = "Velocidade de movimento",
+    Default = 20,
+    Min = 5,
+    Max = 100,
+    Rounding = 0,
     Callback = function(value)
-        getgenv().FollowSpeed = value
+        speed = value
+    end
+})
+
+-- Botão para seguir player
+Tab:AddButton({
+    Title = "Seguir Player",
+    Description = "Começa a seguir o player selecionado",
+    Callback = function()
+        if targetPlayer then
+            following = true
+        end
+    end
+})
+
+-- Botão para parar de seguir
+Tab:AddButton({
+    Title = "Parar de seguir",
+    Description = "Para de seguir o player",
+    Callback = function()
+        following = false
     end
 })
 
 -- Loop de seguir
 RunService.Heartbeat:Connect(function()
-    if not getgenv().FollowingPlayer then return end
-    if not getgenv().SelectedPlayer then return end
+    if following and targetPlayer then
+        local plr = Players:FindFirstChild(targetPlayer)
+        if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local myChar = LocalPlayer.Character
+            if myChar and myChar:FindFirstChild("HumanoidRootPart") then
 
-    local target = Players:FindFirstChild(getgenv().SelectedPlayer)
-    if not target then return end
-    if not target.Character then return end
+                local myHRP = myChar.HumanoidRootPart
+                local targetHRP = plr.Character.HumanoidRootPart
 
-    local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
-    if not targetHRP then return end
+                local targetPos = targetHRP.Position + Vector3.new(0, 0, distance)
 
-    -- Calcula posição segura atrás/acima do player
-    local targetPos = targetHRP.Position + Vector3.new(0, getgenv().FollowDistance, 0)
-
-    -- Move suavemente
-    HRP.CFrame = HRP.CFrame:Lerp(
-        CFrame.new(targetPos),
-        getgenv().FollowSpeed
-    )
+                myHRP.CFrame = myHRP.CFrame:Lerp(
+                    CFrame.new(targetPos, targetHRP.Position),
+                    speed / 100
+                )
+            end
+        end
+    end
 end)

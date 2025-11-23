@@ -13,7 +13,7 @@ local Minimizer = Window:NewMinimizer({
 
 local MobileButton = Minimizer:CreateMobileMinimizer({
   Image = "rbxassetid://0",
-  BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+  BackgroundColor3 = Color3.fromRGB(1, 3, 4)
 })
 
 

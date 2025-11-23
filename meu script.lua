@@ -519,7 +519,7 @@ end)
 
 
 
-main:AddButton({
+Tab:AddButton({
 	Name = "esp",
 	Callback = function()
       		print("button pressed")

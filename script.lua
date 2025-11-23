@@ -761,108 +761,36 @@ end
 
 
 
---// Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+Tab:AddButton({
+	Name = "esp",
+	Callback = function()
+      		print("button pressed")
+  	end    
+})
 
---// Local Player
-local LocalPlayer = Players.LocalPlayer
+local players = game.Players:GetChildren()
 
---// Assume que a aba Tab já existe
-local Tab = script.Parent:WaitForChild("Tab") -- ou ajusta para onde sua aba está no GUI
-
--- Dropdown for players
-local PlayerDropdown = Instance.new("TextButton")
-PlayerDropdown.Size = UDim2.new(0.8, 0, 0, 30)
-PlayerDropdown.Position = UDim2.new(0.1, 0, 0.05, 0)
-PlayerDropdown.Text = "Select Player"
-PlayerDropdown.Parent = Tab
-
-local PlayerListFrame = Instance.new("Frame")
-PlayerListFrame.Size = UDim2.new(0.8, 0, 0, 100)
-PlayerListFrame.Position = UDim2.new(0.1, 0, 0.15, 0)
-PlayerListFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-PlayerListFrame.Visible = false
-PlayerListFrame.Parent = Tab
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = PlayerListFrame
-
--- Buttons
-local UpdateButton = Instance.new("TextButton")
-UpdateButton.Size = UDim2.new(0.4, 0, 0, 30)
-UpdateButton.Position = UDim2.new(0.05, 0, 0.65, 0)
-UpdateButton.Text = "Update List"
-UpdateButton.Parent = Tab
-
-local SpectateButton = Instance.new("TextButton")
-SpectateButton.Size = UDim2.new(0.4, 0, 0, 30)
-SpectateButton.Position = UDim2.new(0.55, 0, 0.65, 0)
-SpectateButton.Text = "Spectate"
-SpectateButton.Parent = Tab
-
-local StopSpectateButton = Instance.new("TextButton")
-StopSpectateButton.Size = UDim2.new(0.9, 0, 0, 30)
-StopSpectateButton.Position = UDim2.new(0.05, 0, 0.75, 0)
-StopSpectateButton.Text = "Stop Spectating"
-StopSpectateButton.Parent = Tab
-
--- Variables
-local selectedPlayer = nil
-local currentCameraTarget = nil
-
--- Functions
-local function updatePlayerList()
-    -- Clear old buttons
-    for _, child in pairs(PlayerListFrame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-
-    -- Add buttons for each player
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 25)
-            btn.Text = player.Name
-            btn.Parent = PlayerListFrame
-            btn.MouseButton1Click:Connect(function()
-                selectedPlayer = player
-                PlayerDropdown.Text = "Selected: " .. player.Name
-                PlayerListFrame.Visible = false
-            end)
+for _, player in pairs(players) do
+    if player.Name ~= game.Players.LocalPlayer.Name then
+        if player.Humanoid then
+            if not player:FindFirstChild("Highlight") then
+                local highlight = Instance.new('Highlight')
+                highlight.Parent = player
+                highlight.FaceColor = Color3.new(255, 255, 255) -- Change this to the desired color
+                highlight.Transparency = 0.5 -- Change this to the desired transparency
+            end
         end
     end
 end
 
--- Toggle dropdown
-PlayerDropdown.MouseButton1Click:Connect(function()
-    PlayerListFrame.Visible = not PlayerListFrame.Visible
+main:AddButton({
+	Name = "infinite jump",
+	Callback = function()
+      		print("button pressed")
+  	end    
+})local InfiniteJumpEnabled = true
+game:GetService("UserInputService").JumpRequest:connect(function()
+	if InfiniteJumpEnabled then
+		game:GetService"Players".LocalPlayer.Character:FindFirstChildOfClass'Humanoid':ChangeState("Jumping")
+	end
 end)
-
--- Update button
-UpdateButton.MouseButton1Click:Connect(updatePlayerList)
-
--- Spectate button
-SpectateButton.MouseButton1Click:Connect(function()
-    if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        currentCameraTarget = selectedPlayer.Character.HumanoidRootPart
-        workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
-        RunService:BindToRenderStep("Spectate", Enum.RenderPriority.Camera.Value, function()
-            if currentCameraTarget then
-                workspace.CurrentCamera.CFrame = CFrame.new(currentCameraTarget.Position + Vector3.new(0,5,10), currentCameraTarget.Position)
-            end
-        end)
-    end
-end)
-
--- Stop spectating button
-StopSpectateButton.MouseButton1Click:Connect(function()
-    currentCameraTarget = nil
-    workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-    RunService:UnbindFromRenderStep("Spectate")
-end)
-
--- Initial population
-updatePlayerList()

@@ -12,7 +12,7 @@ local Minimizer = Window:NewMinimizer({
 })
 
 local MobileButton = Minimizer:CreateMobileMinimizer({
-  Image = "rbxassetid://327356636",
+  Image = "rbxassetid://71014873973869",
   BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 })
 
@@ -28,6 +28,10 @@ local Tab2 = Window:MakeTab({
   Title = "Config",
   Icon = "gear"
 })
+
+
+
+redzlib:SetTheme("Purple")
 
 
 local InicionSection = Tab:AddSection("Início")

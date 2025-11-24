@@ -1459,89 +1459,6 @@ Tab:AddToggle({
 -- TESTE
 
 
--- Supondo que você já tenha sua GUI
-local Tab = Window:MakeTab({
-    Title = "Main",
-    Icon = "Home"
-})
-
-local EnemiesFolder = workspace:WaitForChild("Enemies")
-local highlights = {}
-local toggleEnabled = false
-
--- Função para criar highlight
-local function highlightEnemy(enemy)
-    if enemy:FindFirstChild("HumanoidRootPart") and not highlights[enemy] then
-        local highlight = Instance.new("Highlight")
-        highlight.Parent = enemy
-        highlight.FillTransparency = 1
-        highlight.OutlineTransparency = 0
-        highlight.OutlineColor = Color3.fromRGB(255,0,0)
-        highlights[enemy] = highlight
-    end
-end
-
--- Função para remover todos os highlights
-local function removeHighlights()
-    for _, h in pairs(highlights) do
-        h:Destroy()
-    end
-    highlights = {}
-end
-
--- Toggle para ligar/desligar highlight
-Tab:AddToggle({
-    Name = "Mostrar Hitboxes",
-    Default = false,
-    Callback = function(state)
-        toggleEnabled = state
-        if toggleEnabled then
-            for _, enemy in pairs(EnemiesFolder:GetChildren()) do
-                highlightEnemy(enemy)
-            end
-        else
-            removeHighlights()
-        end
-    end
-})
-
--- Botão para remover highlights manualmente
-Tab:AddButton({
-    Name = "Remover Highlights",
-    Callback = function()
-        removeHighlights()
-    end
-})
-
--- DropDown para escolher tipo de inimigo (exemplo: Boss, Minion, Todos)
-local enemyTypes = {"Todos", "Boss", "Minion"}
-local selectedType = "Todos"
-
-Tab:AddDropdown({
-    Name = "Tipo de Inimigo",
-    Options = enemyTypes,
-    Default = "Todos",
-    Callback = function(option)
-        selectedType = option
-        removeHighlights()
-        if toggleEnabled then
-            for _, enemy in pairs(EnemiesFolder:GetChildren()) do
-                if selectedType == "Todos" or enemy.Name:find(selectedType) then
-                    highlightEnemy(enemy)
-                end
-            end
-        end
-    end
-})
-
--- Detecta inimigos novos spawnando
-EnemiesFolder.ChildAdded:Connect(function(enemy)
-    if toggleEnabled then
-        if selectedType == "Todos" or enemy.Name:find(selectedType) then
-            highlightEnemy(enemy)
-        end
-    end
-end)
 
 
 local MusicList = {
@@ -1556,7 +1473,7 @@ local Sound = Instance.new("Sound")
 Sound.Parent = game:GetService("SoundService")
 Sound.Volume = 1
 
-Tab:AddDropdown({
+Tab2:AddDropdown({
     Name = "Selecione a Música",
     Options = MusicList,
     Callback = function(selected)
@@ -1569,7 +1486,7 @@ Tab:AddDropdown({
     end
 })
 
-Tab:AddTextbox({
+Tab2:AddTextbox({
     Name = "ID Personalizado",
     Default = "",
     TextDisappear = true,
@@ -1579,7 +1496,7 @@ Tab:AddTextbox({
     end
 })
 
-Tab:AddToggle({
+Tab2:AddToggle({
     Name = "Loop",
     Default = false,
     Callback = function(state)

@@ -81,6 +81,14 @@ Tab:AddSlider({
 })
 
 
+Tab:AddButton({
+  Name = "Cuelho",
+  Debounce = 0.5,
+  Callback = function()
+  	
+  end
+})
+
 
 
 
@@ -1460,10 +1468,3 @@ Tab:AddToggle({
 
 
 
-Tab:AddButton({
-  Name = "Cuelho",
-  Debounce = 0.5,
-  Callback = function()
-  	
-  end
-})

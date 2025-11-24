@@ -1458,101 +1458,70 @@ Tab:AddToggle({
 
 
 
---=== SOM GLOBAL ===--
-local Sound = Instance.new("Sound")
-Sound.Name = "MusicPlayer"
-Sound.Parent = game.SoundService
-Sound.Volume = 1
+-- CRIA O PLAYER DE ÁUDIO
+local Sound = Instance.new("Sound", workspace)
+Sound.Looped = false
+Sound.Volume = 5
 
-local musicList = {
-    ["Crab Rave"] = 5410086218,
-    ["Rick Roll"] = 184497530,
-    ["Megalovania"] = 318230516,
-    ["Giorno Theme"] = 4991308995,
-    ["Among Us Drip"] = 6507631161,
+-- LISTA DE MÚSICAS PRONTAS
+local ReadySongs = {
+    ["Alan Walker - Fade"] = 130762736,
+    ["Nightcore - Legends Never Die"] = 1836466539,
+    ["FNAF - It's Been So Long"] = 5990471656
 }
 
-local selectedID = nil
-local isLooping = false
-
-
---------------------------------------------------------------
--- 🎶 DROPDOWN - Músicas prontas
---------------------------------------------------------------
+-- DROPDOWN DE MÚSICAS PRONTAS
 Tab:AddDropdown({
-    Name = "Músicas Prontas",
-    Options = {"Crab Rave", "Rick Roll", "Megalovania", "Giorno Theme", "Among Us Drip"},
-    Default = "Crab Rave",
-    Callback = function(option)
-        selectedID = musicList[option]
-        print("Selecionado:", option, selectedID)
+    Name = "Músicas prontas",
+    Options = table.keys(ReadySongs),
+    Default = nil,
+    Callback = function(value)
+        Sound.SoundId = "rbxassetid://" .. ReadySongs[value]
+        Sound:Play()
     end
 })
 
-
---------------------------------------------------------------
--- 📥 TEXTBOX - ID manual
---------------------------------------------------------------
+-- TEXTBOX PARA O PLAYER DIGITAR UM ID
 Tab:AddTextBox({
-    Name = "ID Personalizado",
+    Name = "ID da música",
     Default = "",
     Placeholder = "Digite o ID aqui...",
     ClearOnFocus = true,
-    Callback = function(txt)
-        local n = tonumber(txt)
-        if n then
-            selectedID = n
-            print("ID manual definido:", n)
-        else
-            print("ID inválido")
-        end
-    end
-})
-
-
---------------------------------------------------------------
--- ▶️ BOTÃO PLAY
---------------------------------------------------------------
-Tab:AddButton({
-    Name = "▶️ Tocar Música",
-    Debounce = 0.3,
-    Callback = function()
-        if selectedID then
-            Sound.SoundId = "rbxassetid://" .. selectedID
+    Callback = function(id)
+        id = tonumber(id)
+        if id then
+            Sound.SoundId = "rbxassetid://" .. id
             Sound:Play()
-        else
-            print("Nenhum ID selecionado!")
         end
     end
 })
 
-
---------------------------------------------------------------
--- ⏹ BOTÃO STOP
---------------------------------------------------------------
+-- BOTÃO TOCAR
 Tab:AddButton({
-    Name = "⏹ Parar Música",
-    Debounce = 0.3,
+    Name = "▶️ Tocar",
+    Debounce = 0.2,
+    Callback = function()
+        if Sound.SoundId ~= "" then
+            Sound:Play()
+        end
+    end
+})
+
+-- BOTÃO PARAR
+Tab:AddButton({
+    Name = "⏹️ Parar",
+    Debounce = 0.2,
     Callback = function()
         Sound:Stop()
     end
 })
 
-
---------------------------------------------------------------
--- 🔁 BOTÃO LOOP (liga/desliga)
---------------------------------------------------------------
+-- BOTÃO LOOP
 Tab:AddButton({
-    Name = "🔁 Loop Música (ON/OFF)",
-    Debounce = 0.3,
+    Name = "🔁 Loop (ON/OFF)",
+    Debounce = 0.2,
     Callback = function()
-        isLooping = not isLooping
-        Sound.Looped = isLooping
-
-        if isLooping then
-            print("Loop ativado")
-        else
-            print("Loop desativado")
-        end
+        Sound.Looped = not Sound.Looped
+        print("Loop agora:", Sound.Looped)
     end
 })

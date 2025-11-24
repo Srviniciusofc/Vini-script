@@ -26,12 +26,9 @@ local Tab = Window:MakeTab({
 --TAB 2
 local Tab2 = Window:MakeTab({
   Title = "Config",
-  Icon = "gear"
+  Icon = "gears"
 })
 
-
-
-redzlib:SetTheme("Purple")
 
 
 local InicionSection = Tab:AddSection("Início")

@@ -924,7 +924,7 @@ nowe = false
 
 game:GetService("StarterGui"):SetCore("SendNotification", { 
 	Title = "FLY GUI V3";
-	Text = "BY SrVinicius";
+	Text = "BY SrVinicius👻👻";
 	Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
 Duration = 5;
 
@@ -1458,176 +1458,88 @@ Tab:AddToggle({
 -- TESTE
 
 
-
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HRP = Character:WaitForChild("HumanoidRootPart")
+-- Supondo que você já tenha sua GUI
+local Tab = Window:MakeTab({
+    Title = "Main",
+    Icon = "Home"
+})
 
 local EnemiesFolder = workspace:WaitForChild("Enemies")
+local highlights = {}
+local toggleEnabled = false
 
--- Variáveis globais
-getgenv().AutoFollow = false
-getgenv().SafeHeight = 10
+-- Função para criar highlight
+local function highlightEnemy(enemy)
+    if enemy:FindFirstChild("HumanoidRootPart") and not highlights[enemy] then
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = enemy
+        highlight.FillTransparency = 1
+        highlight.OutlineTransparency = 0
+        highlight.OutlineColor = Color3.fromRGB(255,0,0)
+        highlights[enemy] = highlight
+    end
+end
 
--- Função de pegar inimigo mais próximo
-local function GetClosestEnemy()
-    local closest = nil
-    local shortestDistance = math.huge
+-- Função para remover todos os highlights
+local function removeHighlights()
+    for _, h in pairs(highlights) do
+        h:Destroy()
+    end
+    highlights = {}
+end
 
-    for _, enemy in ipairs(EnemiesFolder:GetChildren()) do
-        if enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") then
-            if enemy.Humanoid.Health > 0 then
-                local dist = (HRP.Position - enemy.HumanoidRootPart.Position).Magnitude
-                if dist < shortestDistance then
-                    shortestDistance = dist
-                    closest = enemy
+-- Toggle para ligar/desligar highlight
+Tab:AddToggle({
+    Name = "Mostrar Hitboxes",
+    Default = false,
+    Callback = function(state)
+        toggleEnabled = state
+        if toggleEnabled then
+            for _, enemy in pairs(EnemiesFolder:GetChildren()) do
+                highlightEnemy(enemy)
+            end
+        else
+            removeHighlights()
+        end
+    end
+})
+
+-- Botão para remover highlights manualmente
+Tab:AddButton({
+    Name = "Remover Highlights",
+    Callback = function()
+        removeHighlights()
+    end
+})
+
+-- DropDown para escolher tipo de inimigo (exemplo: Boss, Minion, Todos)
+local enemyTypes = {"Todos", "Boss", "Minion"}
+local selectedType = "Todos"
+
+Tab:AddDropdown({
+    Name = "Tipo de Inimigo",
+    Options = enemyTypes,
+    Default = "Todos",
+    Callback = function(option)
+        selectedType = option
+        removeHighlights()
+        if toggleEnabled then
+            for _, enemy in pairs(EnemiesFolder:GetChildren()) do
+                if selectedType == "Todos" or enemy.Name:find(selectedType) then
+                    highlightEnemy(enemy)
                 end
             end
         end
     end
-
-    return closest
-end
-
--- Loop principal
-RunService.Heartbeat:Connect(function()
-    if not getgenv().AutoFollow then return end
-
-    local enemy = GetClosestEnemy()
-    if enemy then
-        local enemyPos = enemy.HumanoidRootPart.Position
-        local targetPos = enemyPos + Vector3.new(0, getgenv().SafeHeight, 0)
-
-        HRP.CFrame = HRP.CFrame:Lerp(
-            CFrame.new(targetPos),
-            0.15
-        )
-    end
-end)
-
--- UI (Redz Library)
-Tab:AddToggle({
-    Name = "Auto Seguir",
-    Default = false,
-    Callback = function(value)
-        getgenv().AutoFollow = value
-    end
 })
 
-Tab:AddSlider({
-    Name = "Altura Segura",
-    Min = 3,
-    Max = 30,
-    Default = 10,
-    Callback = function(value)
-        getgenv().SafeHeight = value
-    end
-})
-
-
-
-
-
---TESTE 2
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-
--- Variáveis
-local Following = false
-local TargetPlayer = nil
-local Distance = 10
-local Speed = 20
-
--- Função para pegar lista de players
-local function getPlayers()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(list, plr.Name)
-        end
-    end
-    return list
-end
-
--- DROPDOWN
-local PlayerDropdown = Tab:AddDropdown({
-    Name = "Players",
-    Options = getPlayers(),
-    Callback = function(value)
-        TargetPlayer = value
-    end
-})
-
--- BOTÃO: Atualizar lista
-Tab:AddButton({
-    Name = "Atualizar Lista",
-    Callback = function()
-        PlayerDropdown:Refresh(getPlayers())
-    end
-})
-
--- BOTÃO: Seguir player
-Tab:AddButton({
-    Name = "Seguir Player",
-    Callback = function()
-        if TargetPlayer then
-            Following = true
-        end
-    end
-})
-
--- BOTÃO: Parar de seguir
-Tab:AddButton({
-    Name = "Parar de seguir",
-    Callback = function()
-        Following = false
-    end
-})
-
--- SLIDER: Distância segura
-Tab:AddSlider({
-    Name = "Distância Segura",
-    Min = 5,
-    Max = 50,
-    Default = 10,
-    Callback = function(value)
-        Distance = value
-    end
-})
-
--- SLIDER: Velocidade
-Tab:AddSlider({
-    Name = "Velocidade",
-    Min = 5,
-    Max = 100,
-    Default = 20,
-    Callback = function(value)
-        Speed = value
-    end
-})
-
--- LOOP DE SEGUIR
-RunService.Heartbeat:Connect(function()
-    if Following and TargetPlayer then
-        local plr = Players:FindFirstChild(TargetPlayer)
-        if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            local targetHRP = plr.Character.HumanoidRootPart
-            if myHRP then
-                local targetPos = targetHRP.Position + Vector3.new(0, Distance, 0)
-                myHRP.CFrame = myHRP.CFrame:Lerp(
-                    CFrame.new(targetPos, targetHRP.Position),
-                    Speed / 100
-                )
-            end
+-- Detecta inimigos novos spawnando
+EnemiesFolder.ChildAdded:Connect(function(enemy)
+    if toggleEnabled then
+        if selectedType == "Todos" or enemy.Name:find(selectedType) then
+            highlightEnemy(enemy)
         end
     end
 end)
+
+

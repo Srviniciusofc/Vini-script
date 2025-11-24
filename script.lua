@@ -1458,45 +1458,91 @@ Tab:AddToggle({
 
 
 
-local MusicList = {
-    ["RickRoll"] = "184497530",
-    ["Megalovania"] = "318230516",
-    ["Crab Rave"] = "5410086218",
-    ["Coffin Dance"] = "5180097131",
-    ["ID Personalizado"] = "CUSTOM"
-}
-
+-- CRIA O SOM GLOBAL
 local Sound = Instance.new("Sound")
+Sound.Name = "MusicPlayer"
 Sound.Parent = game:GetService("SoundService")
 Sound.Volume = 1
 
+local musicList = {
+    ["Crab Rave"] = 5410086218,
+    ["Rick Roll"] = 184497530,
+    ["Megalovania"] = 318230516,
+    ["Giorno Theme"] = 4991308995,
+    ["Among Us Drip"] = 6507631161,
+}
+
+local selectedID = nil
+local isLooping = false
+
+-------------------------------------------------------------
+-- DROPDOWN COM IDS PRONTOS
+-------------------------------------------------------------
 Tab:AddDropdown({
-    Name = "Selecione a Música",
-    Options = MusicList,
-    Callback = function(selected)
-        if selected == "CUSTOM" then
-            print("Use o TextBox abaixo para inserir seu ID de música")
+    Name = "🎶 Músicas Prontas",
+    Options = {"Crab Rave", "Rick Roll", "Megalovania", "Giorno Theme", "Among Us Drip"},
+    Callback = function(option)
+        selectedID = musicList[option]
+        print("Selecionado:", option, selectedID)
+    end
+})
+
+-------------------------------------------------------------
+-- TEXTBOX PARA O PLAYER DIGITAR O ID
+-------------------------------------------------------------
+Tab:AddTextbox({
+    Name = "ID Personalizado",
+    Default = "",
+    TextDisappear = false,
+    Callback = function(txt)
+        local n = tonumber(txt)
+        if n then
+            selectedID = n
+            print("ID personalizado definido:", n)
         else
-            Sound.SoundId = "rbxassetid://" .. MusicList[selected]
-            Sound:Play()
+            print("ID inválido")
         end
     end
 })
 
-Tab:AddTextbox({
-    Name = "ID Personalizado",
-    Default = "",
-    TextDisappear = true,
-    Callback = function(text)
-        Sound.SoundId = "rbxassetid://" .. text
-        Sound:Play()
+-------------------------------------------------------------
+-- BOTÃO PLAY
+-------------------------------------------------------------
+Tab:AddButton({
+    Name = "▶️ Tocar Música",
+    Callback = function()
+        if selectedID then
+            Sound.SoundId = "rbxassetid://" .. selectedID
+            Sound:Play()
+        else
+            print("Nenhum ID selecionado")
+        end
     end
 })
 
-Tab:AddToggle({
-    Name = "Loop",
-    Default = false,
-    Callback = function(state)
-        Sound.Looped = state
+-------------------------------------------------------------
+-- BOTÃO STOP
+-------------------------------------------------------------
+Tab:AddButton({
+    Name = "⏹ Parar Música",
+    Callback = function()
+        Sound:Stop()
+    end
+})
+
+-------------------------------------------------------------
+-- BOTÃO DE LOOP (APERTOU → LIGA / DESAPERTOU → DESLIGA)
+-------------------------------------------------------------
+Tab:AddButton({
+    Name = "🔁 Loop Música",
+    Callback = function()
+        isLooping = not isLooping
+        Sound.Looped = isLooping
+
+        if isLooping then
+            print("Loop ativado")
+        else
+            print("Loop desativado")
+        end
     end
 })

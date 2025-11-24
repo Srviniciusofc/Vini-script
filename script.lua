@@ -1460,46 +1460,10 @@ Tab:AddToggle({
 
 
 
-
-local MusicList = {
-    ["RickRoll"] = "184497530",
-    ["Megalovania"] = "318230516",
-    ["Crab Rave"] = "5410086218",
-    ["Coffin Dance"] = "5180097131",
-    ["ID Personalizado"] = "CUSTOM"
-}
-
-local Sound = Instance.new("Sound")
-Sound.Parent = game:GetService("SoundService")
-Sound.Volume = 1
-
-Tab2:AddDropdown({
-    Name = "Selecione a Música",
-    Options = MusicList,
-    Callback = function(selected)
-        if selected == "CUSTOM" then
-            print("Use o TextBox abaixo para inserir seu ID de música")
-        else
-            Sound.SoundId = "rbxassetid://" .. MusicList[selected]
-            Sound:Play()
-        end
-    end
-})
-
-Tab2:AddTextbox({
-    Name = "ID Personalizado",
-    Default = "",
-    TextDisappear = true,
-    Callback = function(text)
-        Sound.SoundId = "rbxassetid://" .. text
-        Sound:Play()
-    end
-})
-
-Tab2:AddToggle({
-    Name = "Loop",
-    Default = false,
-    Callback = function(state)
-        Sound.Looped = state
-    end
+Tab:AddButton({
+  Name = "Cuelho",
+  Debounce = 0.5,
+  Callback = function()
+  	
+  end
 })

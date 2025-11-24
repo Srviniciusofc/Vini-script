@@ -1475,35 +1475,40 @@ local musicList = {
 local selectedID = nil
 local isLooping = false
 
+
 --------------------------------------------------------------
 -- 🎶 DROPDOWN - Músicas prontas
 --------------------------------------------------------------
 Tab:AddDropdown({
     Name = "Músicas Prontas",
     Options = {"Crab Rave", "Rick Roll", "Megalovania", "Giorno Theme", "Among Us Drip"},
+    Default = "Crab Rave",
     Callback = function(option)
         selectedID = musicList[option]
         print("Selecionado:", option, selectedID)
     end
 })
 
+
 --------------------------------------------------------------
 -- 📥 TEXTBOX - ID manual
 --------------------------------------------------------------
-Tab:AddTextbox({
+Tab:AddTextBox({
     Name = "ID Personalizado",
     Default = "",
-    TextDisappear = false,
+    Placeholder = "Digite o ID aqui...",
+    ClearOnFocus = true,
     Callback = function(txt)
         local n = tonumber(txt)
         if n then
             selectedID = n
-            print("ID personalizado:", n)
+            print("ID manual definido:", n)
         else
-            print("ID inválido.")
+            print("ID inválido")
         end
     end
 })
+
 
 --------------------------------------------------------------
 -- ▶️ BOTÃO PLAY
@@ -1521,6 +1526,7 @@ Tab:AddButton({
     end
 })
 
+
 --------------------------------------------------------------
 -- ⏹ BOTÃO STOP
 --------------------------------------------------------------
@@ -1532,8 +1538,9 @@ Tab:AddButton({
     end
 })
 
+
 --------------------------------------------------------------
--- 🔁 BOTÃO LOOP
+-- 🔁 BOTÃO LOOP (liga/desliga)
 --------------------------------------------------------------
 Tab:AddButton({
     Name = "🔁 Loop Música (ON/OFF)",

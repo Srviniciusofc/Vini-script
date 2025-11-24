@@ -924,7 +924,7 @@ nowe = false
 
 game:GetService("StarterGui"):SetCore("SendNotification", { 
 	Title = "FLY GUI V3";
-	Text = "BY XNEO";
+	Text = "BY SrVinicius";
 	Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
 Duration = 5;
 

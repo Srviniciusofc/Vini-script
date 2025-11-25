@@ -1458,70 +1458,47 @@ Tab:AddToggle({
 
 
 
--- CRIA O PLAYER DE ÁUDIO
 local Sound = Instance.new("Sound", workspace)
-Sound.Looped = false
-Sound.Volume = 5
+Sound.Name = "MusicPlayer"
+Sound.Volume = 1
+Sound.Looped = true
 
--- LISTA DE MÚSICAS PRONTAS
-local ReadySongs = {
-    ["Alan Walker - Fade"] = 130762736,
-    ["Nightcore - Legends Never Die"] = 1836466539,
-    ["FNAF - It's Been So Long"] = 5990471656
-}
+local MusicID = nil
 
--- DROPDOWN DE MÚSICAS PRONTAS
-Tab:AddDropdown({
-    Name = "Músicas prontas",
-    Options = table.keys(ReadySongs),
-    Default = nil,
-    Callback = function(value)
-        Sound.SoundId = "rbxassetid://" .. ReadySongs[value]
-        Sound:Play()
-    end
-})
-
--- TEXTBOX PARA O PLAYER DIGITAR UM ID
-Tab:AddTextBox({
-    Name = "ID da música",
+-- Caixa de texto para o ID da música
+Tab:AddTextbox({
+    Name = "ID da Música",
     Default = "",
-    Placeholder = "Digite o ID aqui...",
-    ClearOnFocus = true,
-    Callback = function(id)
-        id = tonumber(id)
-        if id then
-            Sound.SoundId = "rbxassetid://" .. id
-            Sound:Play()
+    Placeholder = "Digite o ID aqui",
+    Callback = function(value)
+        local num = tonumber(value)
+        if num then
+            MusicID = num
+        else
+            warn("ID inválido!")
         end
     end
 })
 
--- BOTÃO TOCAR
+-- Botão para tocar a música
 Tab:AddButton({
-    Name = "▶️ Tocar",
-    Debounce = 0.2,
+    Name = "▶ Tocar Música",
     Callback = function()
-        if Sound.SoundId ~= "" then
+        if MusicID then
+            Sound.SoundId = "rbxassetid://"..MusicID
             Sound:Play()
+        else
+            warn("Nenhum ID válido foi digitado!")
         end
     end
 })
 
--- BOTÃO PARAR
+-- Botão para parar a música
 Tab:AddButton({
-    Name = "⏹️ Parar",
-    Debounce = 0.2,
+    Name = "⛔ Parar Música",
     Callback = function()
-        Sound:Stop()
-    end
-})
-
--- BOTÃO LOOP
-Tab:AddButton({
-    Name = "🔁 Loop (ON/OFF)",
-    Debounce = 0.2,
-    Callback = function()
-        Sound.Looped = not Sound.Looped
-        print("Loop agora:", Sound.Looped)
+        if Sound.IsPlaying then
+            Sound:Stop()
+        end
     end
 })

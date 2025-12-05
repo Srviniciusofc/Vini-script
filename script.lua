@@ -1641,7 +1641,7 @@ end
 
 
 Tab:AddButton({
-    Name = "Puxar itens",
+    Name = "Puxar Itens",
     Debounce = 0.5,
     Callback = function()
         Puxar()
@@ -1650,52 +1650,43 @@ Tab:AddButton({
 
 function Puxar()
     local Players = game:GetService("Players")
-    local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
-    -- toggle
-    if getgenv().TornadoEnabled == nil then
-        getgenv().TornadoEnabled = false
-    end
+    -- Lista de partes puxadas temporariamente
+    local pulled = {}
 
-    getgenv().TornadoEnabled = not getgenv().TornadoEnabled
-    print("Tornado:", getgenv().TornadoEnabled and "ON" or "OFF")
+    -- Primeiro: puxa os objetos 1 vez
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
 
-    if not getgenv().TornadoEnabled then
-        if getgenv().TornadoConnection then
-            pcall(function() getgenv().TornadoConnection:Disconnect() end)
-            getgenv().TornadoConnection = nil
+            local isValid =
+                obj.Anchored == false and
+                obj.Size.Magnitude < 20 and
+                not obj:IsDescendantOf(char) and
+                obj.CanCollide == true and
+                obj.Parent ~= workspace.Terrain
+
+            if isValid then
+                pcall(function()
+                    obj.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
+                    table.insert(pulled, obj)
+                end)
+            end
         end
-        return
     end
 
-    if getgenv().TornadoConnection then return end
-
-    getgenv().TornadoConnection = RunService.Heartbeat:Connect(function()
-        if not getgenv().TornadoEnabled then return end
-
-        local char = LocalPlayer.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-
-        -- LOOP PARA PEGAR SOMENTE O QUE O TORNADO PEGARIA
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") then
-
-                -- FILTRO PRINCIPAL
-                local isValid =
-                    obj.Anchored == false and -- NÃO ancorado
-                    obj.Size.Magnitude < 20 and -- evita partes do mapa (tamanho gigante)
-                    not obj:IsDescendantOf(char) and -- não puxar player
-                    obj.CanCollide == true and -- geralmente tornados puxam objetos “físicos”
-                    obj.Parent ~= workspace.Terrain -- evita chunks do mapa
-
-                if isValid then
-                    pcall(function()
-                        obj.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
-                    end)
-                end
+    -- Depois de 1 segundo, ele SOLTA tudo (não fica grudado)
+    task.delay(1, function()
+        for _, part in ipairs(pulled) do
+            if part and part:IsA("BasePart") then
+                pcall(function()
+                    -- joga um pouco pro lado pra não grudar
+                    part.CFrame = part.CFrame * CFrame.new(math.random(-6,6), 2, math.random(-6,6))
+                end)
             end
         end
     end)

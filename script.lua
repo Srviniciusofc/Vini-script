@@ -34,13 +34,16 @@ local InicionSection = Tab:AddSection("Início")
 
 
 
---Puxar itens (teste)
+
+
+
+---teste (puxar inimigos )
 
 Tab:AddButton({
-  Name = "Puxar itens",
+  Name = "Puxar Inimigos",
   Debounce = 0.5,
   Callback = function()
-      Puxar()
+      Inimigos()
   end
 })
 
@@ -1471,7 +1474,7 @@ Tab:AddToggle({
 
 
 
-
+function Inimigos()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -1541,7 +1544,7 @@ Tab:AddSlider({
     end
 })
 
-
+end
 
 
 
@@ -1555,60 +1558,70 @@ Tab:AddSlider({
 
 
 
-function Puxar()
-	
+
+
+-- Botão (exemplo)
+Tab:AddButton({
+    Name = "PUXAR TESTE",
+    Debounce = 0.5,
+    Callback = function()
+        PUXAR()
+    end
+})
+
+-- Função Tornado no estilo toggle (varre workspace a cada frame)
+function PUXAR()
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
 
-    -- Toggle principal
+    -- inicializa variáveis globais se precisar
     if getgenv().TornadoEnabled == nil then
         getgenv().TornadoEnabled = false
     end
 
-    -- Inverte o valor (liga/desliga)
+    -- alterna estado
     getgenv().TornadoEnabled = not getgenv().TornadoEnabled
-    
     print("Tornado:", getgenv().TornadoEnabled and "ON" or "OFF")
 
-    -- Se for ligado agora, criamos a lógica
-    if getgenv().TornadoLoop then return end
-    getgenv().TornadoLoop = true
-
-    local parts = {}
-
-    -- Registrar partes
-    local function register(part)
-        if part:IsA("BasePart") 
-            and not part.Anchored 
-            and not part:FindFirstAncestorWhichIsA("Player") then
-            
-            table.insert(parts, part)
+    -- se desligar, desconecta a conexão existente
+    if not getgenv().TornadoEnabled then
+        if getgenv().TornadoConnection then
+            pcall(function() getgenv().TornadoConnection:Disconnect() end)
+            getgenv().TornadoConnection = nil
         end
+        return
     end
 
-    -- Registrar todas as partes
-    for _, v in ipairs(workspace:GetDescendants()) do
-        register(v)
-    end
+    -- evitar múltiplas conexões
+    if getgenv().TornadoConnection then return end
 
-    workspace.DescendantAdded:Connect(register)
-
-    -- LOOP PRINCIPAL
-    RunService.Heartbeat:Connect(function()
+    -- conexão principal: tenta teleportar partes a cada Heartbeat
+    getgenv().TornadoConnection = RunService.Heartbeat:Connect(function()
         if not getgenv().TornadoEnabled then return end
 
         local char = LocalPlayer.Character
         if not char then return end
-
-        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
         if not hrp then return end
 
-        for _, part in ipairs(parts) do
-            if part and part.Parent and not part.Anchored then
-                -- Teleporta pra baixo do player
-                part.CFrame = hrp.CFrame * CFrame.new(0, -3, 0)
+        -- varre workspace inteiro (mais confiável que usar um cache)
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            -- teleporta apenas BasePart e que NÃO sejam parte do seu personagem
+            if obj:IsA("BasePart") and not obj:IsDescendantOf(char) then
+                -- evita tentar mover objetos das Gui/Camera/Players
+                if not obj:FindFirstAncestorWhichIsA("Player") then
+                    -- tentativa segura (pcall) para não quebrar o loop
+                    pcall(function()
+                        -- Teleporta para abaixo do player (-3 Y)
+                        obj.CFrame = hrp.CFrame * CFrame.new(0, -3, 0)
+                        -- se quiser, pode também setar CanCollide = false
+                        -- obj.CanCollide = false
+                    end)
+                end
             end
         end
     end)
 end
+
+

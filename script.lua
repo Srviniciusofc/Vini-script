@@ -1705,7 +1705,6 @@ end
 
 
 
--- LISTA DE ITENS QUE VOCÊ ME PASSOU
 local ItensPermitidos = {
     "Acorn",
     "Bandagens",
@@ -1723,11 +1722,10 @@ local ItensPermitidos = {
 
 local selecionado = nil
 
--- DROPDOWN
+-- MENU DE ITENS
 Tab:AddDropdown({
     Name = "Itens",
     Options = ItensPermitidos,
-    Default = nil,
     Callback = function(v)
         selecionado = v
     end
@@ -1746,12 +1744,18 @@ local function PuxarCoisas()
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name == selecionado then
 
-            -- CORREÇÃO: evita sumir, travar ou voar
+            -- NÃO deixar voar ou atravessar o mapa
             obj.Anchored = false
-            obj.CanCollide = false
+            obj.CanCollide = true
 
-            -- TELEPORTA GRUDANDO no jogador sem bugar
-            obj.CFrame = root.CFrame * CFrame.new(0, -2, -3)
+            -- POSIÇÃO SEGURA (não toca no player)
+            local destino = root.CFrame * CFrame.new(0, 0, -6)
+
+            -- Teleporta com física estável
+            obj:PivotTo(destino)
+
+            -- IMPORTANTE: só 1 puxada
+            task.wait(0.05)
         end
     end
 end

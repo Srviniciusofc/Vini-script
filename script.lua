@@ -1794,7 +1794,8 @@ Tab:AddButton({
 
 
 
-local ItensPermitidos = {
+-- ====== Script 2 CORRIGIDO: procura dentro da pasta Map e move Models/Parts ======
+local ItensPuxar2 = {
     "AbandonedWarehouse",
     "BoatingSchool",
     "ChumBuncket",
@@ -1802,51 +1803,105 @@ local ItensPermitidos = {
     "SandysTreedome"
 }
 
-local selecionado = nil
+local selecionado2 = nil
 
--- MENU DE ITENS
-Tab:AddDropdown({
+local dropdown2 = Tab:AddDropdown({
     Name = "Itens 2",
-    Options = ItensPermitidos,
+    Options = ItensPuxar2,
     Callback = function(v)
-        selecionado = v
+        selecionado2 = v
     end
 })
 
--- FUNÇÃO PRINCIPAL
-local function PuxarCoisas()
-    if not selecionado then return end
+-- encontra a pasta do mapa (aceita "Map" ou "map")
+local function FindMapFolder()
+    local f = workspace:FindFirstChild("Map") or workspace:FindFirstChild("map")
+    return f
+end
 
+-- Procura por um objeto (Model ou BasePart) com o nome fornecido
+-- procura primeiro dentro da pasta Map (se existir), depois no resto do workspace
+local function FindObjectsByName(name)
+    local results = {}
+
+    -- procurar dentro da pasta Map primeiro
+    local mapFolder = FindMapFolder()
+    if mapFolder then
+        for _, obj in ipairs(mapFolder:GetDescendants()) do
+            if obj.Name == name then
+                table.insert(results, obj)
+            end
+        end
+    end
+
+    -- também procurar em todo o workspace (caso esteja noutro lugar)
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj.Name == name then
+            table.insert(results, obj)
+        end
+    end
+
+    -- evitar duplicatas (mesmo objeto duas vezes)
+    local unique = {}
+    local filtered = {}
+    for _, o in ipairs(results) do
+        if not unique[o] then
+            unique[o] = true
+            table.insert(filtered, o)
+        end
+    end
+
+    return filtered
+end
+
+local function PuxarCoisas2()
+    if not selecionado2 then warn("Selecione um item!") return end
     local player = game.Players.LocalPlayer
     local char = player.Character
     if not char then return end
     local root = char:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name == selecionado then
+    local objects = FindObjectsByName(selecionado2)
+    if #objects == 0 then
+        warn("Nenhum objeto com o nome '"..selecionado2.."' encontrado.")
+        return
+    end
 
-            -- NÃO deixar voar ou atravessar o mapa
-            obj.Anchored = false
-            obj.CanCollide = true
-
-            -- POSIÇÃO SEGURA (não toca no player)
-            local destino = root.CFrame * CFrame.new(0, 0, -6)
-
-            -- Teleporta com física estável (uma puxada)
-            obj:PivotTo(destino)
-
-            task.wait(0.05)
-        end
+    for _, obj in ipairs(objects) do
+        pcall(function()
+            if obj:IsA("Model") then
+                -- Move o modelo inteiro para frente do player (12 studs)
+                -- Model:PivotTo é melhor para mover modelos inteiros
+                obj:PivotTo(root.CFrame * CFrame.new(0, 0, -12))
+            elseif obj:IsA("BasePart") then
+                -- Parte isolada -> move para frente do player, sem sobrepor
+                obj.Anchored = false
+                obj.CanCollide = true
+                obj:PivotTo(root.CFrame * CFrame.new(0, 0, -6))
+            else
+                -- se for algo diferente (Ex.: Folder), tenta mover filhos relevantes
+                if obj:IsA("Instance") then
+                    for _, child in ipairs(obj:GetDescendants()) do
+                        if child:IsA("Model") then
+                            child:PivotTo(root.CFrame * CFrame.new(0, 0, -12))
+                        elseif child:IsA("BasePart") then
+                            child.Anchored = false
+                            child.CanCollide = true
+                            child:PivotTo(root.CFrame * CFrame.new(0, 0, -6))
+                        end
+                    end
+                end
+            end
+        end)
+        task.wait(0.05)
     end
 end
 
--- BOTÃO
 Tab:AddButton({
     Name = "Puxar Heróis",
     Debounce = 0.5,
-
     Callback = function()
-        PuxarCoisas()
+        PuxarCoisas2()
     end
 })

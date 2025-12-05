@@ -1554,7 +1554,7 @@ end
 
 
 
---teste
+--PUXAR TUDO DO MAPA
 
 
 
@@ -1562,15 +1562,15 @@ end
 
 -- Botão (exemplo)
 Tab:AddButton({
-    Name = "PUXAR TESTE",
+    Name = "PUXAR TUDO DO MAPA",
     Debounce = 0.5,
     Callback = function()
-        PUXAR()
+        PUXARALL()
     end
 })
 
 -- Função Tornado no estilo toggle (varre workspace a cada frame)
-function PUXAR()
+function PUXARALL()
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
@@ -1625,3 +1625,78 @@ function PUXAR()
 end
 
 
+
+
+
+
+
+
+
+
+--TESTE 
+
+
+
+
+
+
+Tab:AddButton({
+    Name = "Puxar itens",
+    Debounce = 0.5,
+    Callback = function()
+        Puxar()
+    end
+})
+
+function Puxar()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local LocalPlayer = Players.LocalPlayer
+
+    -- toggle
+    if getgenv().TornadoEnabled == nil then
+        getgenv().TornadoEnabled = false
+    end
+
+    getgenv().TornadoEnabled = not getgenv().TornadoEnabled
+    print("Tornado:", getgenv().TornadoEnabled and "ON" or "OFF")
+
+    if not getgenv().TornadoEnabled then
+        if getgenv().TornadoConnection then
+            pcall(function() getgenv().TornadoConnection:Disconnect() end)
+            getgenv().TornadoConnection = nil
+        end
+        return
+    end
+
+    if getgenv().TornadoConnection then return end
+
+    getgenv().TornadoConnection = RunService.Heartbeat:Connect(function()
+        if not getgenv().TornadoEnabled then return end
+
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+
+        -- LOOP PARA PEGAR SOMENTE O QUE O TORNADO PEGARIA
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+
+                -- FILTRO PRINCIPAL
+                local isValid =
+                    obj.Anchored == false and -- NÃO ancorado
+                    obj.Size.Magnitude < 20 and -- evita partes do mapa (tamanho gigante)
+                    not obj:IsDescendantOf(char) and -- não puxar player
+                    obj.CanCollide == true and -- geralmente tornados puxam objetos “físicos”
+                    obj.Parent ~= workspace.Terrain -- evita chunks do mapa
+
+                if isValid then
+                    pcall(function()
+                        obj.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
+                    end)
+                end
+            end
+        end
+    end)
+end

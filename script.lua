@@ -2,7 +2,7 @@ local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlred
 
 local Window = Library:MakeWindow({
   Title = "Vini Hub",
-  SubTitle = "Dev by SrVinicius👻👻",
+  SubTitle = "Dev by SrVinicius",
   ScriptFolder = "redz-library-V5"
 })
 

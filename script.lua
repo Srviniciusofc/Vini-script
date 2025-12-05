@@ -1633,7 +1633,7 @@ end
 
 
 
---TESTE 
+--Puxar Todos os Itens 
 
 
 
@@ -1641,7 +1641,7 @@ end
 
 
 Tab:AddButton({
-    Name = "Puxar Itens",
+    Name = "Puxar Todos os Itens",
     Debounce = 0.5,
     Callback = function()
         Puxar()
@@ -1691,3 +1691,84 @@ function Puxar()
         end
     end)
 end
+
+
+
+
+
+
+
+--Teste
+
+
+--== CONFIG ==--
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Lista inicial de itens
+local ItemList = {
+    "Acorn",
+    "Bandagens",
+    "BlueJellyPatty",
+    "CannedBread",
+    "ChocolateBar",
+    "JellyBlob",
+    "JellyJar",
+    "KelpShake",
+    "Muffler",
+    "OpenCan",
+    "RubberTire",
+    "ToxicBarrel"
+}
+
+-- Variável do item selecionado
+local SelectedItem = nil
+
+
+--== GUI NA ABA "Puxar coisas" ==--
+local Dropdown = Tab:AddDropdown({
+    Name = "Escolha o item para puxar",
+    Options = ItemList,
+    Callback = function(value)
+        SelectedItem = value
+    end
+})
+
+-- Atualizar lista de itens
+Tab:AddButton({
+    Name = "Atualizar lista de itens",
+    Callback = function()
+        -- Limpa lista
+        ItemList = {}
+
+        -- Procura itens pelo nome
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and table.find(ItemList, obj.Name) == nil then
+                table.insert(ItemList, obj.Name)
+            end
+        end
+
+        -- Atualiza dropdown
+        Dropdown:Refresh(ItemList)
+    end
+})
+
+-- Botão para puxar
+Tab:AddButton({
+    Name = "Puxar itens selecionados",
+    Callback = function()
+        if not SelectedItem then
+            warn("Selecione um item primeiro.")
+            return
+        end
+
+        for _, item in ipairs(Workspace:GetDescendants()) do
+            if item:IsA("BasePart") and item.Name == SelectedItem then
+                item.CanCollide = false
+                item.Anchored = false
+                item.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+        end
+    end
+})

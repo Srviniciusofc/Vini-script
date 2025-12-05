@@ -33,6 +33,18 @@ local Tab2 = Window:MakeTab({
 local InicionSection = Tab:AddSection("Início")
 
 
+
+--Puxar itens (teste)
+
+Tab:AddButton({
+  Name = "Puxar itens",
+  Debounce = 0.5,
+  Callback = function()
+      Puxar()
+  end
+})
+
+
 --Botão de Tornado 
 
 Tab:AddButton({
@@ -1533,101 +1545,70 @@ Tab:AddSlider({
 
 
 
---TESTE 2
 
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
 
--- Variáveis
-local Following = false
-local TargetPlayer = nil
-local Distance = 10
-local Speed = 20
 
--- Função para pegar lista de players
-local function getPlayers()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(list, plr.Name)
+
+
+--teste
+
+
+
+function Puxar()
+	
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local LocalPlayer = Players.LocalPlayer
+
+    -- Toggle principal
+    if getgenv().TornadoEnabled == nil then
+        getgenv().TornadoEnabled = false
+    end
+
+    -- Inverte o valor (liga/desliga)
+    getgenv().TornadoEnabled = not getgenv().TornadoEnabled
+    
+    print("Tornado:", getgenv().TornadoEnabled and "ON" or "OFF")
+
+    -- Se for ligado agora, criamos a lógica
+    if getgenv().TornadoLoop then return end
+    getgenv().TornadoLoop = true
+
+    local parts = {}
+
+    -- Registrar partes
+    local function register(part)
+        if part:IsA("BasePart") 
+            and not part.Anchored 
+            and not part:FindFirstAncestorWhichIsA("Player") then
+            
+            table.insert(parts, part)
         end
     end
-    return list
-end
 
--- DROPDOWN
-local PlayerDropdown = Tab:AddDropdown({
-    Name = "Players",
-    Options = getPlayers(),
-    Callback = function(value)
-        TargetPlayer = value
+    -- Registrar todas as partes
+    for _, v in ipairs(workspace:GetDescendants()) do
+        register(v)
     end
-})
 
--- BOTÃO: Atualizar lista
-Tab:AddButton({
-    Name = "Atualizar Lista",
-    Callback = function()
-        PlayerDropdown:Refresh(getPlayers())
-    end
-})
+    workspace.DescendantAdded:Connect(register)
 
--- BOTÃO: Seguir player
-Tab:AddButton({
-    Name = "Seguir Player",
-    Callback = function()
-        if TargetPlayer then
-            Following = true
-        end
-    end
-})
+    -- LOOP PRINCIPAL
+    RunService.Heartbeat:Connect(function()
+        if not getgenv().TornadoEnabled then return end
 
--- BOTÃO: Parar de seguir
-Tab:AddButton({
-    Name = "Parar de seguir",
-    Callback = function()
-        Following = false
-    end
-})
+        local char = LocalPlayer.Character
+        if not char then return end
 
--- SLIDER: Distância segura
-Tab:AddSlider({
-    Name = "Distância Segura",
-    Min = 5,
-    Max = 50,
-    Default = 10,
-    Callback = function(value)
-        Distance = value
-    end
-})
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
 
--- SLIDER: Velocidade
-Tab:AddSlider({
-    Name = "Velocidade",
-    Min = 5,
-    Max = 100,
-    Default = 20,
-    Callback = function(value)
-        Speed = value
-    end
-})
-
--- LOOP DE SEGUIR
-RunService.Heartbeat:Connect(function()
-    if Following and TargetPlayer then
-        local plr = Players:FindFirstChild(TargetPlayer)
-        if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            local targetHRP = plr.Character.HumanoidRootPart
-            if myHRP then
-                local targetPos = targetHRP.Position + Vector3.new(0, Distance, 0)
-                myHRP.CFrame = myHRP.CFrame:Lerp(
-                    CFrame.new(targetPos, targetHRP.Position),
-                    Speed / 100
-                )
+        for _, part in ipairs(parts) do
+            if part and part.Parent and not part.Anchored then
+                -- Teleporta pra baixo do player
+                part.CFrame = hrp.CFrame * CFrame.new(0, -3, 0)
             end
         end
-    end
-end)
+    end)
+end

@@ -18,16 +18,34 @@ local MobileButton = Minimizer:CreateMobileMinimizer({
 
 
 --TAB 1
+
 local Tab = Window:MakeTab({
   Title = "Main",
   Icon = "Home"
 })
 
+
+
+
 --TAB 2
+
 local Tab2 = Window:MakeTab({
   Title = "Config",
   Icon = "gear"
 })
+
+
+
+
+--TAB 3
+
+local Tab3 = Window:MakeTab({
+  Title = "Cuidado",
+  Icon = "alarm"
+})
+
+
+
 
 
 local InicionSection = Tab:AddSection("Início")
@@ -1640,7 +1658,7 @@ end
 
 
 
-Tab:AddButton({
+Tab3:AddButton({
     Name = "Puxar Todos os Itens",
     Debounce = 0.5,
     Callback = function()
@@ -1721,17 +1739,65 @@ local ItensPermitidos = {
 }
 
 local selecionado = nil
+local dropdownObj = nil  -- referência do dropdown, necessária para atualizar as options
 
--- MENU DE ITENS
-Tab:AddDropdown({
+--------------------------------------------------------------------
+--  FUNÇÃO: ATUALIZAR LISTA COM ITENS REAIS DO MAPA
+--------------------------------------------------------------------
+local function AtualizarLista()
+    local encontrados = {}
+
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            for _, nome in ipairs(ItensPermitidos) do
+                if obj.Name == nome then
+                    table.insert(encontrados, nome)
+                    break
+                end
+            end
+        end
+    end
+
+    -- evita duplicar itens na lista
+    local unica = {}
+    local check = {}
+
+    for _, nome in ipairs(encontrados) do
+        if not check[nome] then
+            table.insert(unica, nome)
+            check[nome] = true
+        end
+    end
+
+    -- atualiza realmente o dropdown
+    dropdownObj:Refresh(unica)
+end
+
+--------------------------------------------------------------------
+--  CRIAR DROPDOWN
+--------------------------------------------------------------------
+dropdownObj = Tab:AddDropdown({
     Name = "Itens",
-    Options = ItensPermitidos,
+    Options = {},  -- começa vazio, iremos atualizar
     Callback = function(v)
         selecionado = v
     end
 })
 
--- FUNÇÃO PRINCIPAL
+--------------------------------------------------------------------
+--  BOTÃO: ATUALIZAR LISTA
+--------------------------------------------------------------------
+Tab:AddButton({
+    Name = "Atualizar Lista",
+    Debounce = 0.5,
+    Callback = function()
+        AtualizarLista()
+    end
+})
+
+--------------------------------------------------------------------
+--  FUNÇÃO PRINCIPAL: PUXAR UMA VEZ SEM SEGUIR
+--------------------------------------------------------------------
 local function PuxarCoisas()
     if not selecionado then return end
 
@@ -1744,27 +1810,141 @@ local function PuxarCoisas()
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name == selecionado then
 
-            -- NÃO deixar voar ou atravessar o mapa
             obj.Anchored = false
             obj.CanCollide = true
 
-            -- POSIÇÃO SEGURA (não toca no player)
+            -- posição segura na frente do player
             local destino = root.CFrame * CFrame.new(0, 0, -6)
 
-            -- Teleporta com física estável
             obj:PivotTo(destino)
 
-            -- IMPORTANTE: só 1 puxada
             task.wait(0.05)
         end
     end
 end
 
--- BOTÃO
+--------------------------------------------------------------------
+--  BOTÃO: PUXAR
+--------------------------------------------------------------------
 Tab:AddButton({
     Name = "Puxar Coisas",
     Debounce = 0.5,
     Callback = function()
         PuxarCoisas()
+    end
+})
+
+
+
+
+
+
+
+--TESTE (PUXAR OS HERÓIS)
+
+
+
+-- LISTA DE ITENS QUE ESTE SCRIPT VAI PUXAR
+local ItensPuxar2 = {
+    "AbandonedWarehouse",
+    "BoatingSchool",
+    "ChumBuncket",
+    "KrustyKrab",
+    "SandysTreedome"
+}
+
+local selecionado2 = nil
+local dropdown2 = nil
+
+--------------------------------------------------------------
+-- ATUALIZAR LISTA (procura somente esses itens no workspace)
+--------------------------------------------------------------
+local function AtualizarLista2()
+    local encontrados = {}
+
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            for _, nome in ipairs(ItensPuxar2) do
+                if obj.Name == nome then
+                    table.insert(encontrados, nome)
+                    break
+                end
+            end
+        end
+    end
+
+    -- remover duplicados
+    local unica = {}
+    local check = {}
+
+    for _, nome in ipairs(encontrados) do
+        if not check[nome] then
+            table.insert(unica, nome)
+            check[nome] = true
+        end
+    end
+
+    dropdown2:Refresh(unica)
+end
+
+--------------------------------------------------------------
+-- DROPDOWN
+--------------------------------------------------------------
+dropdown2 = Tab:AddDropdown({
+    Name = "Itens 2",
+    Options = {},
+    Callback = function(v)
+        selecionado2 = v
+    end
+})
+
+--------------------------------------------------------------
+-- BOTÃO ATUALIZAR LISTA
+--------------------------------------------------------------
+Tab:AddButton({
+    Name = "Atualizar Lista 2",
+    Debounce = 0.5,
+    Callback = function()
+        AtualizarLista2()
+    end
+})
+
+--------------------------------------------------------------
+-- FUNÇÃO PARA PUXAR (mesmo sistema do primeiro script)
+--------------------------------------------------------------
+local function PuxarCoisas2()
+    if not selecionado2 then return end
+
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name == selecionado2 then
+
+            -- não voar / não cair
+            obj.Anchored = false
+            obj.CanCollide = true
+
+            -- posição segura na frente do player
+            local destino = root.CFrame * CFrame.new(0, 0, -6)
+
+            obj:PivotTo(destino)
+
+            task.wait(0.05)
+        end
+    end
+end
+
+--------------------------------------------------------------
+-- BOTÃO DE PUXAR (um clique = uma puxada)
+--------------------------------------------------------------
+Tab:AddButton({
+    Name = "Heróis",
+    Debounce = 0.5,
+    Callback = function()
+        PuxarCoisas2()
     end
 })

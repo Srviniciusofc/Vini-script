@@ -1794,83 +1794,71 @@ Tab:AddButton({
 
 
 
-local PullEnabled = false
-
-local ItemsToPull = {
-    "AbandonedWarehouse",
-    "BoatingSchool",
-    "ChumBuncket",
-    "KrustyKrab",
-    "SandysTreedome"
-}
-
-local SearchFolders = {
-    workspace:WaitForChild("Map"),
-    workspace:WaitForChild("HeroChunks"),
-    workspace:WaitForChild("BikiniBottom")
-}
-
-local SelectedItems = {}
-
-local function ListObjects()
-    local list = {}
-    for _, folder in ipairs(SearchFolders) do
-        for _, obj in ipairs(folder:GetDescendants()) do
-            if table.find(ItemsToPull, obj.Name) then
-                table.insert(list, obj.Name)
-            end
-        end
-    end
-    return list
-end
-
-local function PullObjectsOnce()
-    if PullEnabled == false then return end
-
-    local player = game.Players.LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hrp = char:WaitForChild("HumanoidRootPart")
-
-    for _, folder in ipairs(SearchFolders) do
-        for _, obj in ipairs(folder:GetDescendants()) do
-            if table.find(SelectedItems, obj.Name) then
-                if obj:IsA("BasePart") then
-                    obj.Anchored = false
-                    obj.CanCollide = false
-                    obj.CFrame = hrp.CFrame * CFrame.new(0, 3, -3)
-                end
-            end
-        end
-    end
-end
-
--- UI BUTTON
 Tab:AddButton({
     Name = "Puxar Heróis",
     Debounce = 0.5,
     Callback = function()
-        PullEnabled = true
-        PullObjectsOnce()
-        PullEnabled = false
+        Puxar()
     end
 })
 
--- DROPDOWN SELECTOR
-Tab:AddDropdown({
-    Name = "Selecionar Objetos",
-    MultiSelect = true,
-    Options = ItemsToPull,
-    Default = {},
-    Callback = function(selected)
-        SelectedItems = selected
-    end
-})
+local listaPermitida = {
+    ["SandysTreedome"] = true,
+    ["KrustyKrab"] = true,
+    ["ChumBuncket"] = true,
+    ["BoatingSchool"] = true,
+    ["AbandonedWarehouse"] = true
+}
 
--- UPDATE LIST BUTTON
-Tab:AddButton({
-    Name = "Atualizar Lista",
-    Callback = function()
-        local newList = ListObjects()
-        Tab:UpdateDropdown("Selecionar Objetos", newList)
+function Puxar()
+
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    -- Partes puxadas temporariamente
+    local pulled = {}
+
+    -- Puxa SOMENTE os objetos que estão na lista
+    for name, _ in pairs(listaPermitida) do
+
+        local folder = workspace:FindFirstChild(name)
+        if folder then
+            
+            for _, obj in ipairs(folder:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    
+                    local isValid =
+                        obj.Anchored == false and
+                        obj.Size.Magnitude < 300 and
+                        not obj:IsDescendantOf(char)
+
+                    if isValid then
+                        pcall(function()
+                            obj.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
+                            table.insert(pulled, obj)
+                        end)
+                    end
+                end
+            end
+        end
     end
-})
+
+    -- Solta os itens após 1s (para não grudarem)
+    task.delay(1, function()
+        for _, part in ipairs(pulled) do
+            if part and part:IsA("BasePart") then
+                pcall(function()
+                    part.CFrame = part.CFrame * CFrame.new(
+                        math.random(-6,6), 
+                        2, 
+                        math.random(-6,6)
+                    )
+                end)
+            end
+        end
+    end)
+end

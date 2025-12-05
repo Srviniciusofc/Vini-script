@@ -1698,16 +1698,15 @@ end
 
 
 
---Teste
+--Teste (PUXAR DE UM EM UM)
 
 
---== CONFIG ==--
-local Workspace = game:GetService("Workspace")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
--- Lista inicial de itens
-local ItemList = {
+
+
+
+-- LISTA DE ITENS QUE VOCÊ ME PASSOU
+local ItensPermitidos = {
     "Acorn",
     "Bandagens",
     "BlueJellyPatty",
@@ -1722,53 +1721,46 @@ local ItemList = {
     "ToxicBarrel"
 }
 
--- Variável do item selecionado
-local SelectedItem = nil
+local selecionado = nil
 
-
---== GUI NA ABA "Puxar coisas" ==--
-local Dropdown = Tab:AddDropdown({
-    Name = "Escolha o item para puxar",
-    Options = ItemList,
-    Callback = function(value)
-        SelectedItem = value
+-- DROPDOWN
+Tab:AddDropdown({
+    Name = "Itens",
+    Options = ItensPermitidos,
+    Default = nil,
+    Callback = function(v)
+        selecionado = v
     end
 })
 
--- Atualizar lista de itens
-Tab:AddButton({
-    Name = "Atualizar lista de itens",
-    Callback = function()
-        -- Limpa lista
-        ItemList = {}
+-- FUNÇÃO PRINCIPAL
+local function PuxarCoisas()
+    if not selecionado then return end
 
-        -- Procura itens pelo nome
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and table.find(ItemList, obj.Name) == nil then
-                table.insert(ItemList, obj.Name)
-            end
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name == selecionado then
+
+            -- CORREÇÃO: evita sumir, travar ou voar
+            obj.Anchored = false
+            obj.CanCollide = false
+
+            -- TELEPORTA GRUDANDO no jogador sem bugar
+            obj.CFrame = root.CFrame * CFrame.new(0, -2, -3)
         end
-
-        -- Atualiza dropdown
-        Dropdown:Refresh(ItemList)
     end
-})
+end
 
--- Botão para puxar
+-- BOTÃO
 Tab:AddButton({
-    Name = "Puxar itens selecionados",
+    Name = "Puxar Coisas",
+    Debounce = 0.5,
     Callback = function()
-        if not SelectedItem then
-            warn("Selecione um item primeiro.")
-            return
-        end
-
-        for _, item in ipairs(Workspace:GetDescendants()) do
-            if item:IsA("BasePart") and item.Name == SelectedItem then
-                item.CanCollide = false
-                item.Anchored = false
-                item.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
-            end
-        end
+        PuxarCoisas()
     end
 })

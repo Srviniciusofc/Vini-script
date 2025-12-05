@@ -1789,8 +1789,6 @@ Tab:AddButton({
 
 
 
---PUXAR HERÓIS (TESTE)
-
 
 
 

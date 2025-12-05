@@ -1723,30 +1723,75 @@ end
 
 
 
+
+
+-- ====== Script 1: Itens normais (corrigido) ======
 local ItensPermitidos = {
-    "Acorn",
-    "Bandagens",
-    "BlueJellyPatty",
-    "CannedBread",
-    "ChocolateBar",
-    "JellyBlob",
-    "JellyJar",
-    "KelpShake",
-    "Muffler",
-    "OpenCan",
-    "RubberTire",
-    "ToxicBarrel"
+    "Acorn","Bandagens","BlueJellyPatty","CannedBread","ChocolateBar",
+    "JellyBlob","JellyJar","KelpShake","Muffler","OpenCan","RubberTire","ToxicBarrel"
 }
-
 local selecionado = nil
-local dropdownObj = nil  -- referência do dropdown, necessária para atualizar as options
+local dropdownObj = nil
 
---------------------------------------------------------------------
---  FUNÇÃO: ATUALIZAR LISTA COM ITENS REAIS DO MAPA
---------------------------------------------------------------------
-local function AtualizarLista()
+-- Função utilitária para criar dropdown (usa Tab:AddDropdown)
+local function CreateDropdown(options, callback)
+    dropdownObj = Tab:AddDropdown({
+        Name = "Itens",
+        Options = options or {},
+        Default = nil,
+        Callback = function(v)
+            selecionado = v
+            if callback then pcall(callback, v) end
+        end
+    })
+    return dropdownObj
+end
+
+-- Atualiza o dropdown de forma robusta
+local function SafeRefreshDropdown(options)
+    options = options or {}
+    -- remove duplicados
+    local seen = {}
+    local clean = {}
+    for _, v in ipairs(options) do
+        if not seen[v] then
+            seen[v] = true
+            table.insert(clean, v)
+        end
+    end
+
+    if dropdownObj then
+        -- tenta usar Refresh() se existir
+        local ok = false
+        pcall(function()
+            if dropdownObj.Refresh then
+                dropdownObj:Refresh(clean)
+                ok = true
+            end
+        end)
+        if ok then return end
+
+        -- tenta destruir o antigo (se tiver Destroy)
+        pcall(function()
+            if dropdownObj.Destroy then
+                dropdownObj:Destroy()
+            elseif dropdownObj.parent and dropdownObj.Parent and typeof(dropdownObj.Parent.Destroy) == "function" then
+                dropdownObj:Destroy()
+            end
+        end)
+        dropdownObj = nil
+    end
+
+    -- cria novo
+    CreateDropdown(clean)
+end
+
+-- Inicializa com vazio (cria dropdown)
+CreateDropdown({})
+
+-- Função que monta lista baseada no workspace (apenas BasePart com nome permitido)
+local function AtualizarListaItens()
     local encontrados = {}
-
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") then
             for _, nome in ipairs(ItensPermitidos) do
@@ -1757,50 +1802,21 @@ local function AtualizarLista()
             end
         end
     end
-
-    -- evita duplicar itens na lista
-    local unica = {}
-    local check = {}
-
-    for _, nome in ipairs(encontrados) do
-        if not check[nome] then
-            table.insert(unica, nome)
-            check[nome] = true
-        end
-    end
-
-    -- atualiza realmente o dropdown
-    dropdownObj:Refresh(unica)
+    SafeRefreshDropdown(encontrados)
 end
 
---------------------------------------------------------------------
---  CRIAR DROPDOWN
---------------------------------------------------------------------
-dropdownObj = Tab:AddDropdown({
-    Name = "Itens",
-    Options = {},  -- começa vazio, iremos atualizar
-    Callback = function(v)
-        selecionado = v
-    end
-})
-
---------------------------------------------------------------------
---  BOTÃO: ATUALIZAR LISTA
---------------------------------------------------------------------
+-- Botão Atualizar
 Tab:AddButton({
     Name = "Atualizar Lista",
     Debounce = 0.5,
     Callback = function()
-        AtualizarLista()
+        AtualizarListaItens()
     end
 })
 
---------------------------------------------------------------------
---  FUNÇÃO PRINCIPAL: PUXAR UMA VEZ SEM SEGUIR
---------------------------------------------------------------------
+-- Puxar (uma vez)
 local function PuxarCoisas()
-    if not selecionado then return end
-
+    if not selecionado then warn("Selecione um item!") return end
     local player = game.Players.LocalPlayer
     local char = player.Character
     if not char then return end
@@ -1809,23 +1825,17 @@ local function PuxarCoisas()
 
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name == selecionado then
-
-            obj.Anchored = false
-            obj.CanCollide = true
-
-            -- posição segura na frente do player
-            local destino = root.CFrame * CFrame.new(0, 0, -6)
-
-            obj:PivotTo(destino)
-
+            pcall(function()
+                obj.Anchored = false
+                obj.CanCollide = true
+                local destino = root.CFrame * CFrame.new(0, 0, -7)
+                obj:PivotTo(destino)
+            end)
             task.wait(0.05)
         end
     end
 end
 
---------------------------------------------------------------------
---  BOTÃO: PUXAR
---------------------------------------------------------------------
 Tab:AddButton({
     Name = "Puxar Coisas",
     Debounce = 0.5,
@@ -1833,6 +1843,13 @@ Tab:AddButton({
         PuxarCoisas()
     end
 })
+
+
+
+
+
+
+
 
 
 

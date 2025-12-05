@@ -1719,22 +1719,25 @@ end
 --Teste (PUXAR DE UM EM UM)
 
 
-
-
-
-
-
-
--- ====== Script 1: Itens normais ======
 local ItensPermitidos = {
-    "Acorn","Bandagens","BlueJellyPatty","CannedBread","ChocolateBar",
-    "JellyBlob","JellyJar","KelpShake","Muffler","OpenCan","RubberTire","ToxicBarrel"
+    "Acorn",
+    "Bandagens",
+    "BlueJellyPatty",
+    "CannedBread",
+    "ChocolateBar",
+    "JellyBlob",
+    "JellyJar",
+    "KelpShake",
+    "Muffler",
+    "OpenCan",
+    "RubberTire",
+    "ToxicBarrel"
 }
 
 local selecionado = nil
 
--- Cria dropdown fixo com a lista de itens
-local dropdownObj = Tab:AddDropdown({
+-- MENU DE ITENS
+Tab:AddDropdown({
     Name = "Itens",
     Options = ItensPermitidos,
     Callback = function(v)
@@ -1742,9 +1745,10 @@ local dropdownObj = Tab:AddDropdown({
     end
 })
 
--- Função para puxar (uma vez)
+-- FUNÇÃO PRINCIPAL
 local function PuxarCoisas()
-    if not selecionado then warn("Selecione um item!") return end
+    if not selecionado then return end
+
     local player = game.Players.LocalPlayer
     local char = player.Character
     if not char then return end
@@ -1753,19 +1757,27 @@ local function PuxarCoisas()
 
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name == selecionado then
-            pcall(function()
-                obj.Anchored = false
-                obj.CanCollide = true
-                obj:PivotTo(root.CFrame * CFrame.new(0, 0, -7))
-            end)
+
+            -- NÃO deixar voar ou atravessar o mapa
+            obj.Anchored = false
+            obj.CanCollide = true
+
+            -- POSIÇÃO SEGURA (não toca no player)
+            local destino = root.CFrame * CFrame.new(0, 0, -6)
+
+            -- Teleporta com física estável
+            obj:PivotTo(destino)
+
+            -- IMPORTANTE: só 1 puxada
             task.wait(0.05)
         end
     end
 end
 
--- Botão de puxar
+-- BOTÃO
 Tab:AddButton({
     Name = "Puxar Coisas",
+    Debounce = 0.5,
     Callback = function()
         PuxarCoisas()
     end
@@ -1777,19 +1789,12 @@ Tab:AddButton({
 
 
 
+--PUXAR HERÓIS (TESTE)
 
 
 
 
-
-
-
---TESTE (PUXAR OS HERÓIS)
-
-
-
--- LISTA DE ITENS QUE ESTE SCRIPT VAI PUXAR
-local ItensPuxar2 = {
+local ItensPermitidos = {
     "AbandonedWarehouse",
     "BoatingSchool",
     "ChumBuncket",
@@ -1797,67 +1802,20 @@ local ItensPuxar2 = {
     "SandysTreedome"
 }
 
-local selecionado2 = nil
-local dropdown2 = nil
+local selecionado = nil
 
---------------------------------------------------------------
--- ATUALIZAR LISTA (procura somente esses itens no workspace)
---------------------------------------------------------------
-local function AtualizarLista2()
-    local encontrados = {}
-
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            for _, nome in ipairs(ItensPuxar2) do
-                if obj.Name == nome then
-                    table.insert(encontrados, nome)
-                    break
-                end
-            end
-        end
-    end
-
-    -- remover duplicados
-    local unica = {}
-    local check = {}
-
-    for _, nome in ipairs(encontrados) do
-        if not check[nome] then
-            table.insert(unica, nome)
-            check[nome] = true
-        end
-    end
-
-    dropdown2:Refresh(unica)
-end
-
---------------------------------------------------------------
--- DROPDOWN
---------------------------------------------------------------
-dropdown2 = Tab:AddDropdown({
+-- MENU DE ITENS
+Tab:AddDropdown({
     Name = "Itens 2",
-    Options = {},
+    Options = ItensPermitidos,
     Callback = function(v)
-        selecionado2 = v
+        selecionado = v
     end
 })
 
---------------------------------------------------------------
--- BOTÃO ATUALIZAR LISTA
---------------------------------------------------------------
-Tab:AddButton({
-    Name = "Atualizar Lista 2",
-    Debounce = 0.5,
-    Callback = function()
-        AtualizarLista2()
-    end
-})
-
---------------------------------------------------------------
--- FUNÇÃO PARA PUXAR (mesmo sistema do primeiro script)
---------------------------------------------------------------
-local function PuxarCoisas2()
-    if not selecionado2 then return end
+-- FUNÇÃO PRINCIPAL
+local function PuxarCoisas()
+    if not selecionado then return end
 
     local player = game.Players.LocalPlayer
     local char = player.Character
@@ -1866,15 +1824,16 @@ local function PuxarCoisas2()
     if not root then return end
 
     for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name == selecionado2 then
+        if obj:IsA("BasePart") and obj.Name == selecionado then
 
-            -- não voar / não cair
+            -- NÃO deixar voar ou atravessar o mapa
             obj.Anchored = false
             obj.CanCollide = true
 
-            -- posição segura na frente do player
+            -- POSIÇÃO SEGURA (não toca no player)
             local destino = root.CFrame * CFrame.new(0, 0, -6)
 
+            -- Teleporta com física estável (uma puxada)
             obj:PivotTo(destino)
 
             task.wait(0.05)
@@ -1882,13 +1841,12 @@ local function PuxarCoisas2()
     end
 end
 
---------------------------------------------------------------
--- BOTÃO DE PUXAR (um clique = uma puxada)
---------------------------------------------------------------
+-- BOTÃO
 Tab:AddButton({
-    Name = "Heróis",
+    Name = "Puxar Heróis",
     Debounce = 0.5,
+
     Callback = function()
-        PuxarCoisas2()
+        PuxarCoisas()
     end
 })

@@ -1579,7 +1579,7 @@ end
 
 
 -- Botão (exemplo)
-Tab:AddButton({
+Tab3:AddButton({
     Name = "PUXAR TUDO DO MAPA",
     Debounce = 0.5,
     Callback = function()
@@ -1725,96 +1725,24 @@ end
 
 
 
--- ====== Script 1: Itens normais (corrigido) ======
+-- ====== Script 1: Itens normais ======
 local ItensPermitidos = {
     "Acorn","Bandagens","BlueJellyPatty","CannedBread","ChocolateBar",
     "JellyBlob","JellyJar","KelpShake","Muffler","OpenCan","RubberTire","ToxicBarrel"
 }
+
 local selecionado = nil
-local dropdownObj = nil
 
--- Função utilitária para criar dropdown (usa Tab:AddDropdown)
-local function CreateDropdown(options, callback)
-    dropdownObj = Tab:AddDropdown({
-        Name = "Itens",
-        Options = options or {},
-        Default = nil,
-        Callback = function(v)
-            selecionado = v
-            if callback then pcall(callback, v) end
-        end
-    })
-    return dropdownObj
-end
-
--- Atualiza o dropdown de forma robusta
-local function SafeRefreshDropdown(options)
-    options = options or {}
-    -- remove duplicados
-    local seen = {}
-    local clean = {}
-    for _, v in ipairs(options) do
-        if not seen[v] then
-            seen[v] = true
-            table.insert(clean, v)
-        end
-    end
-
-    if dropdownObj then
-        -- tenta usar Refresh() se existir
-        local ok = false
-        pcall(function()
-            if dropdownObj.Refresh then
-                dropdownObj:Refresh(clean)
-                ok = true
-            end
-        end)
-        if ok then return end
-
-        -- tenta destruir o antigo (se tiver Destroy)
-        pcall(function()
-            if dropdownObj.Destroy then
-                dropdownObj:Destroy()
-            elseif dropdownObj.parent and dropdownObj.Parent and typeof(dropdownObj.Parent.Destroy) == "function" then
-                dropdownObj:Destroy()
-            end
-        end)
-        dropdownObj = nil
-    end
-
-    -- cria novo
-    CreateDropdown(clean)
-end
-
--- Inicializa com vazio (cria dropdown)
-CreateDropdown({})
-
--- Função que monta lista baseada no workspace (apenas BasePart com nome permitido)
-local function AtualizarListaItens()
-    local encontrados = {}
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            for _, nome in ipairs(ItensPermitidos) do
-                if obj.Name == nome then
-                    table.insert(encontrados, nome)
-                    break
-                end
-            end
-        end
-    end
-    SafeRefreshDropdown(encontrados)
-end
-
--- Botão Atualizar
-Tab:AddButton({
-    Name = "Atualizar Lista",
-    Debounce = 0.5,
-    Callback = function()
-        AtualizarListaItens()
+-- Cria dropdown fixo com a lista de itens
+local dropdownObj = Tab:AddDropdown({
+    Name = "Itens",
+    Options = ItensPermitidos,
+    Callback = function(v)
+        selecionado = v
     end
 })
 
--- Puxar (uma vez)
+-- Função para puxar (uma vez)
 local function PuxarCoisas()
     if not selecionado then warn("Selecione um item!") return end
     local player = game.Players.LocalPlayer
@@ -1828,17 +1756,16 @@ local function PuxarCoisas()
             pcall(function()
                 obj.Anchored = false
                 obj.CanCollide = true
-                local destino = root.CFrame * CFrame.new(0, 0, -7)
-                obj:PivotTo(destino)
+                obj:PivotTo(root.CFrame * CFrame.new(0, 0, -7))
             end)
             task.wait(0.05)
         end
     end
 end
 
+-- Botão de puxar
 Tab:AddButton({
     Name = "Puxar Coisas",
-    Debounce = 0.5,
     Callback = function()
         PuxarCoisas()
     end

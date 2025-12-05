@@ -1458,7 +1458,7 @@ Tab:AddToggle({
 
 
 
-local Sound = Instance.new("Sound", workspace)
+local Sound = Window:MakeTab("Sound", workspace)
 Sound.Name = "MusicPlayer"
 Sound.Volume = 1
 Sound.Looped = true
@@ -1484,21 +1484,22 @@ Tab:AddTextbox({
 Tab:AddButton({
     Name = "▶ Tocar Música",
     Callback = function()
-        if MusicID then
+        
             Sound.SoundId = "rbxassetid://"..MusicID
-            Sound:Play()
-        else
             warn("Nenhum ID válido foi digitado!")
-        end
-    end
-})
+        end})
+    
 
 -- Botão para parar a música
 Tab:AddButton({
-    Name = "⛔ Parar Música",
-    Callback = function()
-        if Sound.IsPlaying then
+  Name = "Parar som",
+  Debounce = 0.5,
+  Callback = function()
             Sound:Stop()
-        end
-    end
+  end
 })
+
+
+
+
+

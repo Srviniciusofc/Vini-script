@@ -1707,78 +1707,13 @@ end
 
 
 
---Teste (PUXAR DE UM EM UM)
-
-
-local ItensPermitidos = {
-    "Acorn",
-    "Bandagens",
-    "BlueJellyPatty",
-    "CannedBread",
-    "ChocolateBar",
-    "JellyBlob",
-    "JellyJar",
-    "KelpShake",
-    "Muffler",
-    "OpenCan",
-    "RubberTire",
-    "ToxicBarrel"
-}
-
-local selecionado = nil
-
--- MENU DE ITENS
-Tab:AddDropdown({
-    Name = "Itens",
-    Options = ItensPermitidos,
-    Callback = function(v)
-        selecionado = v
-    end
-})
-
--- FUNÇÃO PRINCIPAL
-local function PuxarCoisas()
-    if not selecionado then return end
-
-    local player = game.Players.LocalPlayer
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name == selecionado then
-
-            -- NÃO deixar voar ou atravessar o mapa
-            obj.Anchored = false
-            obj.CanCollide = true
-
-            -- POSIÇÃO SEGURA (não toca no player)
-            local destino = root.CFrame * CFrame.new(0, 0, -6)
-
-            -- Teleporta com física estável
-            obj:PivotTo(destino)
-
-            -- IMPORTANTE: só 1 puxada
-            task.wait(0.05)
-        end
-    end
-end
-
--- BOTÃO
-Tab:AddButton({
-    Name = "Puxar Coisas",
-    Debounce = 0.5,
-    Callback = function()
-        PuxarCoisas()
-    end
-})
 
 
 
 
 
---teste
+
+--Bring foods
 
 Tab:AddButton({
     Name = "Bring Food",
@@ -1857,5 +1792,83 @@ Tab:AddButton({
 
         task.wait(1.6)
         safeSetText("Bring Food")
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--TESTE
+
+
+
+
+Tab:AddButton({
+    Name = "Trazer toda a geleia",
+    Debounce = 0.5,
+    Callback = function(_btn) -- ignoramos _btn, pois sua lib não suporta set de texto
+        local Players = game:GetService("Players")
+        local plr = Players.LocalPlayer
+        if not plr then
+            warn("[Bring Jelly] LocalPlayer não encontrado")
+            return
+        end
+
+        local root = workspace:FindFirstChild("LootDrops")
+        if not root then
+            warn("[Bring Jelly] workspace.LootDrops não encontrado")
+            return
+        end
+
+        -- função de bring segura
+        local function bring(part)
+            if not part or not part:IsA("BasePart") then return false end
+            local char = plr.Character or plr.CharacterAdded:Wait()
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return false end
+
+            local ok, err = pcall(function()
+                part.Anchored = false
+                part.CanCollide = true
+                local dest = hrp.CFrame * CFrame.new(0, -2, -4)
+                part:PivotTo(dest)
+            end)
+
+            if not ok then
+                warn("[Bring Jelly] falha ao trazer:", part, err)
+            end
+            return ok
+        end
+
+        -- varre e traz itens com "Jelly" no nome
+        local count = 0
+        for _, v in ipairs(root:GetDescendants()) do
+            if v and v:IsA("BasePart") and tostring(v.Name):find("Jelly") then
+                pcall(function() -- proteger cada tentativa
+                    if bring(v) then
+                        count = count + 1
+                    end
+                end)
+                task.wait(0.06)
+            end
+        end
+
+        if count > 0 then
+            warn("[Bring Jelly] Trouxe "..count.." geleia(s).")
+        else
+            warn("[Bring Jelly] Sem geleia encontrada.")
+        end
     end
 })

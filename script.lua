@@ -1877,7 +1877,12 @@ Tab:AddButton({
 
 
 
---teste
+
+
+
+
+
+--Bring Scrap
 
 
 
@@ -2048,5 +2053,146 @@ Tab:AddButton({
 
             busy = false
         end
+    end)()
+})
+
+
+
+
+
+
+
+
+--Bring bandagem
+
+
+
+
+
+Tab:AddButton({
+    Name = "Trazer Bandagens",
+    Debounce = 0.5,
+    Callback = (function()
+
+        local busy = false
+
+        return function(btn)
+            if busy then
+                warn("[Bring Bandages] Ação já em execução.")
+                return
+            end
+            busy = true
+
+            local Players = game:GetService("Players")
+            local plr = Players.LocalPlayer
+            if not plr then
+                warn("[Bring Bandages] LocalPlayer não encontrado.")
+                busy = false
+                return
+            end
+
+            local root = workspace:FindFirstChild("LootDrops")
+            if not root then
+                warn("[Bring Bandages] workspace.LootDrops não encontrado.")
+                busy = false
+                return
+            end
+
+            -- Lista válida
+            local bandageList = {
+                ["Bandage"] = true,
+                ["BandagePack"] = true
+            }
+
+            local function findBasePart(obj)
+                if not obj then return nil end
+                if obj:IsA("BasePart") then return obj end
+                if obj:IsA("Model") then
+                    if obj.PrimaryPart and obj.PrimaryPart:IsA("BasePart") then
+                        return obj.PrimaryPart
+                    end
+                    for _, d in ipairs(obj:GetDescendants()) do
+                        if d:IsA("BasePart") then return d end
+                    end
+                else
+                    for _, d in ipairs(obj:GetDescendants()) do
+                        if d:IsA("BasePart") then return d end
+                    end
+                end
+                return nil
+            end
+
+            local function bringPart(part, hrp)
+                local ok, err = pcall(function()
+                    part.Anchored = true
+                    part:PivotTo(hrp.CFrame * CFrame.new(0, -2, -4))
+                    task.delay(0.06, function()
+                        pcall(function() part.Anchored = false end)
+                    end)
+                end)
+                return ok, err
+            end
+
+            local function bringModel(model, hrp)
+                if model.PrimaryPart then
+                    local ok, err = pcall(function()
+                        model:SetPrimaryPartCFrame(hrp.CFrame * CFrame.new(0, -2, -4))
+                    end)
+                    return ok, err
+                else
+                    local p = findBasePart(model)
+                    if p then
+                        return bringPart(p, hrp)
+                    end
+                end
+                return false, "nenhum BasePart"
+            end
+
+            local char = plr.Character or plr.CharacterAdded:Wait()
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then
+                warn("[Bring Bandages] HRP não encontrado.")
+                busy = false
+                return
+            end
+
+            local candidates = {}
+            for _, v in ipairs(root:GetDescendants()) do
+                if bandageList[v.Name] then
+                    table.insert(candidates, v)
+                end
+            end
+
+            if #candidates == 0 then
+                warn("[Bring Bandages] Nenhuma Bandage encontrada.")
+                busy = false
+                return
+            end
+
+            local count = 0
+
+            for _, item in ipairs(candidates) do
+                local ok
+                if item:IsA("Model") then
+                    ok = select(1, bringModel(item, hrp))
+                else
+                    local part = item:IsA("BasePart") and item or findBasePart(item)
+                    if part then
+                        ok = select(1, bringPart(part, hrp))
+                    end
+                end
+
+                if ok then
+                    -- <-- correção: atribuição em Lua
+                    count = count + 1
+                end
+
+                task.wait(0.06)
+            end
+
+            warn("[Bring Bandages] Trouxe "..count.." bandagem(ns).")
+            busy = false
+        end
+
     end)()
 })

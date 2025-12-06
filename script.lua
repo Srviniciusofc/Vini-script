@@ -55,15 +55,6 @@ local InicionSection = Tab:AddSection("Início")
 
 
 
----teste (puxar inimigos )
-
-Tab:AddButton({
-  Name = "Puxar Inimigos",
-  Debounce = 0.5,
-  Callback = function()
-      Inimigos()
-  end
-})
 
 
 --Botão de Tornado 
@@ -1794,65 +1785,3 @@ Tab:AddButton({
 
 
 
-local AutoAtack = false
-
--- LISTA DE NOMES DOS INIMIGOS
-local NomesAlvo = {
-    "BabyOyster",
-    "AggressiveJellyfish1",
-    "AggressiveJellyfish3"
-}
-
-Tab3:AddToggle({
-    Name = "Auto Attack (Distância)",
-    Default = false,
-    Callback = function(v)
-        AutoAtack = v
-        if v then AutoAtacar() end
-    end
-})
-
-function AutoAtacar()
-    task.spawn(function()
-        while AutoAtack do
-
-            -- 1) Procurar na pasta Enemies.BikiniBottom
-            local pasta1 = workspace.Map.Enemies:FindFirstChild("BikiniBottom")
-            if pasta1 then
-                for _, npc in ipairs(pasta1:GetChildren()) do
-                    if table.find(NomesAlvo, npc.Name) then
-                        Atacar(npc)
-                    end
-                end
-            end
-
-            -- 2) Procurar na pasta Jellyfish.BikiniBottom
-            local pasta2 = workspace.Map.Jellyfish:FindFirstChild("BikiniBottom")
-            if pasta2 then
-                for _, npc in ipairs(pasta2:GetChildren()) do
-                    if table.find(NomesAlvo, npc.Name) then
-                        Atacar(npc)
-                    end
-                end
-            end
-
-            task.wait(0.2)
-        end
-    end)
-end
-
-function Atacar(npc)
-    -- Atacar via Humanoid
-    if npc:FindFirstChild("Humanoid") then
-        pcall(function()
-            npc.Humanoid.Health = 0
-        end)
-    end
-
-    -- Caso use NumberValue "Health"
-    if npc:FindFirstChild("Health") then
-        pcall(function()
-            npc.Health.Value = 0
-        end)
-    end
-end

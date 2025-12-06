@@ -1787,6 +1787,75 @@ Tab:AddButton({
 
 
 
+--teste
+
+
+
+
+
+
+local AutoAtack = false
+
+-- LISTA DE NOMES QUE SERÃO ATACADOS
+local NomesAlvo = {
+    "BabyOyster",
+    -- coloque aqui os outros nomes dos inimigos
+    "Inimigo1",
+    "Inimigo2",
+    "Inimigo3"
+}
+
+Tab3:AddToggle({
+    Name = "Auto Attack (Distância)",
+    Default = false,
+    Callback = function(v)
+        AutoAtack = v
+        if v then
+            AutoAtacar()
+        end
+    end
+})
+
+function AutoAtacar()
+    task.spawn(function()
+        while AutoAtack do
+
+            -- Procurar em Enemies.BikiniBottom
+            for _, npc in ipairs(workspace.Map.Enemies.BikiniBottom:GetChildren()) do
+                if table.find(NomesAlvo, npc.Name) then
+                    Atacar(npc)
+                end
+            end
+
+            -- BabyOyster fixo
+            local baby = workspace.Map.Enemies.BikiniBottom:FindFirstChild("BabyOyster")
+            if baby and table.find(NomesAlvo, "BabyOyster") then
+                Atacar(baby)
+            end
+
+            -- Procurar em Jellyfish.BikiniBottom
+            for _, npc in ipairs(workspace.Map.Jellyfish.BikiniBottom:GetChildren()) do
+                if table.find(NomesAlvo, npc.Name) then
+                    Atacar(npc)
+                end
+            end
+
+            task.wait(0.2)
+        end
+    end)
+end
+
+function Atacar(npc)
+    if npc:FindFirstChild("Humanoid") then
+        pcall(function()
+            npc.Humanoid.Health = 0
+        end)
+    elseif npc:FindFirstChild("Health") then
+        pcall(function()
+            npc.Health.Value = 0
+        end)
+    end
+end
 
 
 

@@ -2196,3 +2196,53 @@ Tab:AddButton({
 
     end)()
 })
+
+
+
+
+
+
+
+
+
+
+
+
+--TRAZER NPCS
+
+
+
+
+
+
+Tab:AddButton({
+    Name = "Trazer NPCs",
+    Callback = function()
+
+        local function safeFind(path)
+            local inst = workspace
+            for _, p in ipairs(path) do
+                inst = inst:FindFirstChild(p)
+                if not inst then
+                    return nil
+                end
+            end
+            return inst
+        end
+
+        local npcs = {
+            {"Map", "HeroChunks", "BikiniBottom", "ChumBucket", "SpongeBob"},
+            {"Map", "HeroChunks", "BikiniBottom", "KrustyKrab", "MrKrabs"},
+            {"Map", "HeroChunks", "BikiniBottom", "BoatingSchool", "Patrick"},
+            {"Map", "HeroChunks", "BikiniBottom", "AbandonedWarehouse", "Squidward"},
+            {"Map", "HeroChunks", "BikiniBottom", "SandysTreedome", "Sandy"},
+        }
+
+        for _, path in ipairs(npcs) do
+            local noc = safeFind(path)
+            if noc then
+                bring(noc)
+            end
+        end
+    end
+})

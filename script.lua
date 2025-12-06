@@ -1716,7 +1716,7 @@ end
 --Bring foods
 
 Tab:AddButton({
-    Name = "Bring Food",
+    Name = "Trazer comida",
     Debounce = 0.5,
     Callback = function(btn) -- btn pode ser nil dependendo da lib
         -- função segura pra setar texto do botão (se existir)
@@ -1810,13 +1810,13 @@ Tab:AddButton({
 
 
 
---TESTE
+--BRING GELEIAS 
 
 
 
 
 Tab:AddButton({
-    Name = "Trazer toda a geleia",
+    Name = "Trazer geleias",
     Debounce = 0.5,
     Callback = function(_btn) -- ignoramos _btn, pois sua lib não suporta set de texto
         local Players = game:GetService("Players")
@@ -1871,4 +1871,182 @@ Tab:AddButton({
             warn("[Bring Jelly] Sem geleia encontrada.")
         end
     end
+})
+
+
+
+
+
+--teste
+
+
+
+
+
+
+
+Tab:AddButton({
+    Name = "Trazer Scrap",
+    Debounce = 0.5,
+    Callback = (function()
+        local busy = false -- debounce local pra garantir que não execute duas vezes junto
+
+        return function(btn) -- btn existe, mas não mexemos em btn.Text
+            if busy then
+                warn("[Bring Scrap] Ação já em execução.")
+                return
+            end
+            busy = true
+
+            local Players = game:GetService("Players")
+            local plr = Players.LocalPlayer
+            if not plr then
+                warn("[Bring Scrap] LocalPlayer não encontrado.")
+                busy = false
+                return
+            end
+
+            local root = workspace:FindFirstChild("LootDrops")
+            if not root then
+                warn("[Bring Scrap] workspace.LootDrops não encontrado.")
+                busy = false
+                return
+            end
+
+            local scrapList = {
+                "ToxicBarrel","BrokenMotorcycle","CyclopsHelmet","RubberTire","Muffler","OpenCan",
+                "ScrapMetal","ScrapPile","MetalPlate","EngineBlock","WornGear","RustyPipe","OldWires"
+            }
+            local function isScrapName(name)
+                for _, s in ipairs(scrapList) do
+                    if s == name then return true end
+                end
+                return false
+            end
+
+            -- retorna o primeiro BasePart válido dentro de um objeto (self/internals)
+            local function findPartInObject(obj)
+                if not obj then return nil end
+                if obj:IsA("BasePart") then return obj end
+                if obj:IsA("Model") then
+                    if obj.PrimaryPart and obj.PrimaryPart:IsA("BasePart") then
+                        return obj.PrimaryPart
+                    end
+                    for _, d in ipairs(obj:GetDescendants()) do
+                        if d:IsA("BasePart") then return d end
+                    end
+                else
+                    for _, d in ipairs(obj:GetDescendants()) do
+                        if d:IsA("BasePart") then return d end
+                    end
+                end
+                return nil
+            end
+
+            local function bringPart(part, hrp)
+                if not part or not part:IsA("BasePart") then return false, "not a basepart" end
+                local ok, err = pcall(function()
+                    -- tentativa segura: anchor temporariamente e move
+                    part.Anchored = true
+                    part:PivotTo(hrp.CFrame * CFrame.new(0, -2, -4))
+                    -- opcional: manter ancorado por 0.05s pra estabilidade e soltar depois
+                    task.delay(0.06, function()
+                        pcall(function() part.Anchored = false end)
+                    end)
+                end)
+                return ok, err
+            end
+
+            local function bringModel(model, hrp)
+                if not model or not model:IsA("Model") then return false, "not a model" end
+                -- se tem PrimaryPart, usa SetPrimaryPartCFrame
+                if model.PrimaryPart then
+                    local ok, err = pcall(function()
+                        model:SetPrimaryPartCFrame(hrp.CFrame * CFrame.new(0, -2, -4))
+                    end)
+                    return ok, err
+                else
+                    -- fallback: pega qualquer BasePart dentro do model e move
+                    local p = findPartInObject(model)
+                    if p then
+                        return bringPart(p, hrp)
+                    end
+                    return false, "nenhum basepart no model"
+                end
+            end
+
+            local count = 0
+            local plrChar = plr.Character
+            if not plrChar then
+                -- tenta esperar um pouco se a char não existir
+                plrChar = plr.CharacterAdded and plr.CharacterAdded:Wait()
+            end
+
+            local hrp = plrChar and plrChar:FindFirstChild("HumanoidRootPart")
+            if not hrp then
+                warn("[Bring Scrap] HumanoidRootPart não encontrado no personagem.")
+                busy = false
+                return
+            end
+
+            -- iterar pelos filhos diretos e descendants caso seja necessário
+            local candidates = {}
+            for _, v in ipairs(root:GetDescendants()) do
+                -- consideramos Models ou BaseParts: verificamos nomes no próprio objeto e nos descendentes
+                local nameMatch = false
+                if v.Name and isScrapName(v.Name) then
+                    nameMatch = true
+                else
+                    -- se for model, checar nome dos descendentes também
+                    for _, d in ipairs(v:GetDescendants()) do
+                        if d.Name and isScrapName(d.Name) then
+                            nameMatch = true
+                            break
+                        end
+                    end
+                end
+                if nameMatch then
+                    table.insert(candidates, v)
+                end
+            end
+
+            if #candidates == 0 then
+                warn("[Bring Scrap] Nenhum item da scrapList encontrado em LootDrops.")
+                busy = false
+                return
+            end
+
+            for _, item in ipairs(candidates) do
+                -- pra cada candidato, tentamos mover de forma apropriada
+                local success, why = false, nil
+                if item:IsA("Model") then
+                    success, why = bringModel(item, hrp)
+                else
+                    -- pode ser um part profundo: pegar o BasePart real
+                    local part = item:IsA("BasePart") and item or findPartInObject(item)
+                    if part then
+                        success, why = bringPart(part, hrp)
+                    else
+                        success, why = false, "nenhum BasePart encontrado"
+                    end
+                end
+
+                if success then
+                    count = count + 1
+                else
+                    warn(("[Bring Scrap] Falha ao trazer '%s' : %s"):format(tostring(item:GetFullName()), tostring(why)))
+                end
+
+                task.wait(0.06) -- delay pra estabilidade física
+            end
+
+            if count > 0 then
+                warn("[Bring Scrap] Trouxe "..count.." item(s) da lista.")
+            else
+                warn("[Bring Scrap] Nenhum item movido com sucesso.")
+            end
+
+            busy = false
+        end
+    end)()
 })

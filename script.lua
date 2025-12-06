@@ -1796,13 +1796,11 @@ Tab:AddButton({
 
 local AutoAtack = false
 
--- LISTA DE NOMES QUE SERÃO ATACADOS
+-- LISTA DE NOMES DOS INIMIGOS
 local NomesAlvo = {
     "BabyOyster",
-    -- coloque aqui os outros nomes dos inimigos
-    "Inimigo1",
-    "Inimigo2",
-    "Inimigo3"
+    "AggressiveJellyfish1",
+    "AggressiveJellyfish3"
 }
 
 Tab3:AddToggle({
@@ -1810,9 +1808,7 @@ Tab3:AddToggle({
     Default = false,
     Callback = function(v)
         AutoAtack = v
-        if v then
-            AutoAtacar()
-        end
+        if v then AutoAtacar() end
     end
 })
 
@@ -1820,23 +1816,23 @@ function AutoAtacar()
     task.spawn(function()
         while AutoAtack do
 
-            -- Procurar em Enemies.BikiniBottom
-            for _, npc in ipairs(workspace.Map.Enemies.BikiniBottom:GetChildren()) do
-                if table.find(NomesAlvo, npc.Name) then
-                    Atacar(npc)
+            -- 1) Procurar na pasta Enemies.BikiniBottom
+            local pasta1 = workspace.Map.Enemies:FindFirstChild("BikiniBottom")
+            if pasta1 then
+                for _, npc in ipairs(pasta1:GetChildren()) do
+                    if table.find(NomesAlvo, npc.Name) then
+                        Atacar(npc)
+                    end
                 end
             end
 
-            -- BabyOyster fixo
-            local baby = workspace.Map.Enemies.BikiniBottom:FindFirstChild("BabyOyster")
-            if baby and table.find(NomesAlvo, "BabyOyster") then
-                Atacar(baby)
-            end
-
-            -- Procurar em Jellyfish.BikiniBottom
-            for _, npc in ipairs(workspace.Map.Jellyfish.BikiniBottom:GetChildren()) do
-                if table.find(NomesAlvo, npc.Name) then
-                    Atacar(npc)
+            -- 2) Procurar na pasta Jellyfish.BikiniBottom
+            local pasta2 = workspace.Map.Jellyfish:FindFirstChild("BikiniBottom")
+            if pasta2 then
+                for _, npc in ipairs(pasta2:GetChildren()) do
+                    if table.find(NomesAlvo, npc.Name) then
+                        Atacar(npc)
+                    end
                 end
             end
 
@@ -1846,18 +1842,17 @@ function AutoAtacar()
 end
 
 function Atacar(npc)
+    -- Atacar via Humanoid
     if npc:FindFirstChild("Humanoid") then
         pcall(function()
             npc.Humanoid.Health = 0
         end)
-    elseif npc:FindFirstChild("Health") then
+    end
+
+    -- Caso use NumberValue "Health"
+    if npc:FindFirstChild("Health") then
         pcall(function()
             npc.Health.Value = 0
         end)
     end
 end
-
-
-
-
-

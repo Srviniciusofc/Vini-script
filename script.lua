@@ -1780,8 +1780,82 @@ Tab:AddButton({
 
 --teste
 
+Tab:AddButton({
+    Name = "Bring Food",
+    Debounce = 0.5,
+    Callback = function(btn) -- btn pode ser nil dependendo da lib
+        -- função segura pra setar texto do botão (se existir)
+        local function safeSetText(t)
+            if typeof(btn) == "table" and typeof(btn.Text) == "string" then
+                pcall(function() btn.Text = t end)
+            end
+        end
 
+        safeSetText("Working...")
+        local count = 0
 
+        local items = {
+            "ChocolateBar",
+            "CannedBread",
+            "KelpShake",
+            "Acorn",
+            "JellyPatty",
+            "BlueJellyPatty",
+            "KrabbyPatty"
+        }
 
+        -- checa LootDrops
+        local root = workspace:FindFirstChild("LootDrops")
+        if not root then
+            warn("[Bring Food] workspace.LootDrops nao encontrado")
+            safeSetText("No LootDrops")
+            task.wait(1.5)
+            safeSetText("Bring Food")
+            return
+        end
 
+        -- função que traz um BasePart até o player (1 vez)
+        local function bringPart(part)
+            if not part or not part:IsA("BasePart") then return false end
+            local player = game:GetService("Players").LocalPlayer
+            if not player then return false end
+            local char = player.Character or player.CharacterAdded:Wait()
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return false end
 
+            -- tentativa segura
+            local ok, err = pcall(function()
+                -- física estável: mantemos CanCollide = true pra evitar atravessar chão
+                part.Anchored = false
+                part.CanCollide = true
+                -- posição segura: um pouco à frente do player
+                local destino = hrp.CFrame * CFrame.new(0, -2, -4)
+                part:PivotTo(destino)
+            end)
+
+            if not ok then
+                warn("[Bring Food] falha ao trazer:", part, err)
+            end
+            return ok
+        end
+
+        -- varrer LootDrops
+        for _, v in ipairs(root:GetDescendants()) do
+            if v and v:IsA("BasePart") and table.find(items, v.Name) then
+                if pcall(function() return bringPart(v) end) then
+                    count = count + 1
+                    task.wait(0.06) -- pequeno delay pra não estourar física
+                end
+            end
+        end
+
+        if count > 0 then
+            safeSetText("Brought "..count.."!")
+        else
+            safeSetText("No Food")
+        end
+
+        task.wait(1.6)
+        safeSetText("Bring Food")
+    end
+})

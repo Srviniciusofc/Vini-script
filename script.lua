@@ -8,23 +8,6 @@ local Window = Library:MakeWindow({
 
 
 
---teste
-
-
-local WingImage = Library:CreateUI({
-    Name = "WingIMG",
-    Type = "Image",
-    Image = "rbxassetid://3926305904",
-    
-    Size = UDim2.new(0, 90, 0, 90),
-    Position = UDim2.new(0.92, 0, 0.12, 0), -- canto direito igual o da foto
-    Draggable = false
-})
-
-
-
-
-
 
 
 
@@ -33,8 +16,8 @@ local Minimizer = Window:NewMinimizer({
 })
 
 local MobileButton = Minimizer:CreateMobileMinimizer({
-  Image = "escudo",
-  BackgroundColor3 = Color3.fromRGB(1, 3, 4)
+  Image = "rbxassetid://0",
+  BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 })
 
 

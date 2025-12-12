@@ -2219,3 +2219,61 @@ Tab:AddButton({
 
 
 
+--TESTE
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+-- LISTA DE INIMIGOS QUE O KILL AURA VAI ATACAR
+local targets = {
+    ["AggressiveJellyfish1"] = true,
+    ["AggressiveJellyfish3"] = true,
+    ["BabyOyster"] = true,
+    ["Clam&Oysters"] = true,
+    ["Jellyfish1"] = true,
+}
+
+local KillAura = false
+
+-- FUNÇÃO DE ATAQUE
+local function hitEnemy(enemy)
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    if not enemy:FindFirstChild("HumanoidRootPart") then return end
+
+    local hum = enemy:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.Health = hum.Health - 10
+    end
+end
+
+-- LOOP DO KILL AURA
+RunService.Heartbeat:Connect(function()
+    if not KillAura then return end
+
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if targets[obj.Name] and obj:FindFirstChild("HumanoidRootPart") then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+
+                local dist = (char.HumanoidRootPart.Position - obj.HumanoidRootPart.Position).Magnitude
+                
+                if dist < 15 then -- raio do kill aura
+                    hitEnemy(obj)
+                end
+            end
+        end
+    end
+end)
+
+-- BOTÃO IGUAL AO DO "TRAZER SCRAP"
+Tab:AddButton({
+    Name = "Ativar Kill Aura",
+    Debounce = 0.5,
+    Callback = function()
+        KillAura = not KillAura
+        print("Kill Aura:", KillAura)
+    end
+})

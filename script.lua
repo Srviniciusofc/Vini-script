@@ -2148,3 +2148,43 @@ Tab:AddButton({
 
 
 
+-- AUTO FISH INSTANT - FISCH IT
+-- Pega o peixe imediatamente quando aparece
+
+local Players = game:GetService("Players")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local LocalPlayer = Players.LocalPlayer
+
+local AutoFish = false
+
+-- 🔁 AUTO PEGAR PEIXE VIA PROMPT (MAIS COMUM)
+ProximityPromptService.PromptShown:Connect(function(prompt)
+    if not AutoFish then return end
+
+    -- nomes comuns usados em Fisch It
+    if prompt.Name == "Catch" or prompt.Name == "FishPrompt" or prompt.ActionText == "Catch" then
+        task.wait() -- instantâneo
+        fireproximityprompt(prompt)
+    end
+end)
+
+-- 🔁 AUTO PEGAR PEIXE VIA REMOTE (CASO USE REMOTE)
+for _,v in pairs(game:GetDescendants()) do
+    if v:IsA("RemoteEvent") and string.lower(v.Name):find("fish") then
+        v.OnClientEvent:Connect(function()
+            if AutoFish then
+                v:FireServer()
+            end
+        end)
+    end
+end
+
+-- 🔘 TOGGLE
+Tab:AddToggle({
+    Title = "Auto Fish",
+    Description = "Pesca instantânea (sem delay)",
+    Default = false,
+    Callback = function(state)
+        AutoFish = state
+    end
+})

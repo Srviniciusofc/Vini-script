@@ -2157,15 +2157,16 @@ local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HRP = Character:WaitForChild("HumanoidRootPart")
 
 local AutoFarmEnabled = false
+local moving = false
 
--- Atualiza personagem ao morrer
+-- Atualiza ao morrer
 LocalPlayer.CharacterAdded:Connect(function(char)
     Character = char
     HRP = char:WaitForChild("HumanoidRootPart")
 end)
 
--- PEGA O BAÚ REAL DO JOGO
-local function GetGoldenChest()
+-- Posição FINAL REAL do mapa (The End)
+local function GetEndCFrame()
     local stages = workspace:FindFirstChild("BoatStages")
     if not stages then return nil end
 
@@ -2175,18 +2176,32 @@ local function GetGoldenChest()
     local theEnd = normal:FindFirstChild("TheEnd")
     if not theEnd then return nil end
 
-    return theEnd:FindFirstChild("GoldenChest")
+    return theEnd:GetPivot()
 end
 
 -- LOOP DO AUTO FARM
 RunService.Heartbeat:Connect(function()
-    if AutoFarmEnabled and HRP then
-        local chest = GetGoldenChest()
-        if chest and chest:IsA("BasePart") then
-            HRP.Velocity = Vector3.zero
-            HRP.CFrame = chest.CFrame * CFrame.new(0, 5, 0)
-        end
+    if not AutoFarmEnabled or not HRP then return end
+    if moving then return end
+
+    local endCF = GetEndCFrame()
+    if not endCF then return end
+
+    moving = true
+
+    -- ANCORAR (ESSENCIAL)
+    HRP.Anchored = true
+
+    -- TELEPORTE SEGURO (PASSA POR TODOS OS MAPAS)
+    for i = 1, 200 do
+        if not AutoFarmEnabled then break end
+        HRP.CFrame = HRP.CFrame:Lerp(endCF * CFrame.new(0, 10, 0), 0.05)
+        task.wait()
     end
+
+    -- DESANCORA
+    HRP.Anchored = false
+    moving = false
 end)
 
 -- TOGGLE NO SEU ESTILO
@@ -2198,9 +2213,12 @@ Tab:AddToggle({
         AutoFarmEnabled = state
 
         if state then
-            Notify("Auto Farm Ativado", "Indo direto ao tesouro.")
+            Notify("Auto Farm Ativado", "Indo até o final do mapa.")
         else
             Notify("Auto Farm Desativado", "Auto Farm desligado.")
+            if HRP then
+                HRP.Anchored = false
+            end
         end
     end
 })

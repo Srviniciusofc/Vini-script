@@ -2189,139 +2189,231 @@ Tab:AddToggle({
 
 
 
---==============================
+--==================================================
+-- KILL AURA + ESP | SURVIVE BIKINI BOTTOM [BETA]
+-- REDZ UI | SEM LOAD | SEM WINDOW | SEM TAB
+--==================================================
+
 -- SERVICES
---==============================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local lp = Players.LocalPlayer
 
-local LocalPlayer = Players.LocalPlayer
-
---==============================
--- FLAGS GLOBAIS (IMPORTANTE)
---==============================
+-- GLOBAL FLAGS
 getgenv().KillAura = false
-getgenv().ESPEnemies = false
+getgenv().ESP = false
 
---==============================
 -- CONFIG
---==============================
-local KILL_DISTANCE = 30
+local SAFE_HEIGHT = 9
+local DAMAGE = 6
+local HIT_DELAY = 0.15
+local ESP_DISTANCE = 2500
 
---==============================
--- PATHS
---==============================
-local Map = workspace:WaitForChild("Map")
-local EnemiesFolder = Map:FindFirstChild("Enemies")
-local JellyfishFolder = Map:FindFirstChild("Jellyfish")
-
---==============================
--- ESP STORAGE
---==============================
-local ESPs = {}
-
---==============================
--- ESP FUNCTIONS
---==============================
-local function ClearESP()
-	for _,v in pairs(ESPs) do
-		if v then v:Destroy() end
-	end
-	ESPs = {}
+-- CHARACTER
+local function getChar()
+    return lp.Character or lp.CharacterAdded:Wait()
 end
 
-local function AddESP(enemy)
-	if ESPs[enemy] then return end
-	if not enemy:FindFirstChild("HumanoidRootPart") then return end
+--========================================
+-- GET ENEMIES (ANTI ERRO)
+--========================================
+local function getEnemies()
+    local enemies = {}
 
-	local box = Instance.new("BoxHandleAdornment")
-	box.Adornee = enemy.HumanoidRootPart
-	box.Size = Vector3.new(4,6,4)
-	box.AlwaysOnTop = true
-	box.ZIndex = 10
-	box.Transparency = 0.5
-	box.Color3 = Color3.fromRGB(255,0,0)
-	box.Parent = enemy
+    local map = workspace:WaitForChild("Map", 10)
+    if not map then return enemies end
 
-	ESPs[enemy] = box
+    local enemiesFolder = map:WaitForChild("Enemies", 10)
+    if not enemiesFolder then return enemies end
+
+    local bikini = enemiesFolder:WaitForChild("BikiniBottom", 10)
+    if not bikini then return enemies end
+
+    for _,v in ipairs(bikini:GetDescendants()) do
+        if v:IsA("Model") then
+            local hum = v:FindFirstChildOfClass("Humanoid")
+            local hrp = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Torso")
+            if hum and hrp and hum.Health > 0 then
+                table.insert(enemies, v)
+            end
+        end
+    end
+
+    return enemies
 end
 
---==============================
--- KILL SEM ARMA
---==============================
-local function KillEnemy(enemy)
-	local hum = enemy:FindFirstChildOfClass("Humanoid")
-	if hum and hum.Health > 0 then
-		hum:TakeDamage(9e9)
-	end
+--========================================
+-- FLY CONTROL
+--========================================
+local function enableFly(hrp)
+    if hrp:FindFirstChild("KA_BV") then return end
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "KA_BV"
+    bv.MaxForce = Vector3.new(1e6,1e6,1e6)
+    bv.Velocity = Vector3.zero
+    bv.Parent = hrp
+
+    local bg = Instance.new("BodyGyro")
+    bg.Name = "KA_BG"
+    bg.MaxTorque = Vector3.new(1e6,1e6,1e6)
+    bg.CFrame = hrp.CFrame
+    bg.Parent = hrp
 end
 
---==============================
--- SCAN FOLDER
---==============================
-local function ScanFolder(folder)
-	if not folder then return end
-	if not LocalPlayer.Character then return end
-
-	local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
-
-	for _,enemy in ipairs(folder:GetChildren()) do
-		if enemy:IsA("Model")
-			and enemy:FindFirstChild("HumanoidRootPart")
-			and enemy:FindFirstChildOfClass("Humanoid") then
-
-			local dist = (enemy.HumanoidRootPart.Position - hrp.Position).Magnitude
-
-			-- ESP
-			if getgenv().ESPEnemies then
-				AddESP(enemy)
-			end
-
-			-- KILL AURA
-			if getgenv().KillAura and dist <= KILL_DISTANCE then
-				KillEnemy(enemy)
-			end
-		end
-	end
+local function disableFly(hrp)
+    if hrp:FindFirstChild("KA_BV") then hrp.KA_BV:Destroy() end
+    if hrp:FindFirstChild("KA_BG") then hrp.KA_BG:Destroy() end
 end
 
---==============================
--- MAIN LOOP
---==============================
-RunService.Heartbeat:Connect(function()
-	if not getgenv().ESPEnemies then
-		ClearESP()
-	end
+--========================================
+-- ESP SYSTEM
+--========================================
+local ESP_CACHE = {}
 
-	-- Enemies > BikiniBottom
-	if EnemiesFolder and EnemiesFolder:FindFirstChild("BikiniBottom") then
-		ScanFolder(EnemiesFolder.BikiniBottom)
-	end
+local function createESP(enemy)
+    if ESP_CACHE[enemy] then return end
 
-	-- Jellyfish > BikiniBottom
-	if JellyfishFolder and JellyfishFolder:FindFirstChild("BikiniBottom") then
-		ScanFolder(JellyfishFolder.BikiniBottom)
-	end
+    local hum = enemy:FindFirstChildOfClass("Humanoid")
+    local hrp = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Torso")
+    if not hum or not hrp then return end
+
+    local box = Drawing.new("Square")
+    box.Filled = false
+    box.Thickness = 1
+    box.Transparency = 1
+
+    local name = Drawing.new("Text")
+    name.Center = true
+    name.Outline = true
+    name.Size = 13
+    name.Text = enemy.Name
+
+    local hp = Drawing.new("Text")
+    hp.Center = true
+    hp.Outline = true
+    hp.Size = 12
+
+    ESP_CACHE[enemy] = {
+        Box = box,
+        Name = name,
+        HP = hp,
+        HRP = hrp,
+        Hum = hum
+    }
+end
+
+local function removeESP(enemy)
+    local esp = ESP_CACHE[enemy]
+    if not esp then return end
+
+    esp.Box:Remove()
+    esp.Name:Remove()
+    esp.HP:Remove()
+
+    ESP_CACHE[enemy] = nil
+end
+
+--========================================
+-- ESP LOOP (SEM continue)
+--========================================
+RunService.RenderStepped:Connect(function()
+    if not getgenv().ESP then
+        for _,e in pairs(ESP_CACHE) do
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.HP.Visible = false
+        end
+        return
+    end
+
+    for enemy,esp in pairs(ESP_CACHE) do
+        if enemy.Parent and esp.Hum and esp.Hum.Health > 0 then
+            local pos, onScreen = Camera:WorldToViewportPoint(esp.HRP.Position)
+            local dist = (Camera.CFrame.Position - esp.HRP.Position).Magnitude
+
+            if onScreen and dist < ESP_DISTANCE then
+                local size = math.clamp(2000 / dist, 25, 120)
+
+                esp.Box.Size = Vector2.new(size / 1.5, size)
+                esp.Box.Position = Vector2.new(
+                    pos.X - esp.Box.Size.X / 2,
+                    pos.Y - esp.Box.Size.Y / 2
+                )
+                esp.Box.Visible = true
+
+                esp.Name.Position = Vector2.new(pos.X, pos.Y - size / 2 - 14)
+                esp.Name.Visible = true
+
+                esp.HP.Text = "HP: " .. math.floor(esp.Hum.Health)
+                esp.HP.Position = Vector2.new(pos.X, pos.Y + size / 2 + 2)
+                esp.HP.Visible = true
+            else
+                esp.Box.Visible = false
+                esp.Name.Visible = false
+                esp.HP.Visible = false
+            end
+        else
+            removeESP(enemy)
+        end
+    end
 end)
 
---==============================
--- TOGGLES (AGORA FUNCIONAM)
---==============================
+--========================================
+-- MAIN LOOP
+--========================================
+task.spawn(function()
+    while true do
+        -- ESP UPDATE
+        for _,enemy in ipairs(getEnemies()) do
+            createESP(enemy)
+        end
+
+        -- KILL AURA
+        if getgenv().KillAura then
+            local char = getChar()
+            local hrp = char:WaitForChild("HumanoidRootPart")
+            enableFly(hrp)
+
+            for _,enemy in ipairs(getEnemies()) do
+                local hum = enemy:FindFirstChildOfClass("Humanoid")
+                local ehrp = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Torso")
+
+                if hum and ehrp and hum.Health > 0 then
+                    while hum.Health > 0 and getgenv().KillAura do
+                        hrp.CFrame = ehrp.CFrame * CFrame.new(0, SAFE_HEIGHT, 0)
+                        hum:TakeDamage(DAMAGE)
+                        task.wait(HIT_DELAY)
+                    end
+                end
+            end
+        else
+            local char = lp.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                disableFly(char.HumanoidRootPart)
+            end
+        end
+
+        task.wait(0.2)
+    end
+end)
+
+--========================================
+-- BOTÕES (REDZ UI)
+--========================================
 Tab:AddToggle({
-	Title = "Kill Aura (Sem Arma)",
-	Description = "Mata Jellyfish automaticamente",
-	Default = false,
-	Callback = function(state)
-		getgenv().KillAura = state
-	end
+    Name = "Kill Aura (Fly)",
+    Default = false,
+    Callback = function(v)
+        getgenv().KillAura = v
+    end
 })
 
 Tab:AddToggle({
-	Title = "ESP Inimigos",
-	Description = "Mostra Jellyfish através das paredes",
-	Default = false,
-	Callback = function(state)
-		getgenv().ESPEnemies = state
-	end
+    Name = "ESP Enemies",
+    Default = false,
+    Callback = function(v)
+        getgenv().ESP = v
+    end
 })

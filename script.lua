@@ -2149,7 +2149,7 @@ Tab:AddButton({
 
 
 
--- AUTO FARM BUILD A BOAT FOR TREASURE (FINAL CORRETO)
+-- AUTO FARM BUILD A BOAT (3 PONTOS FIXOS - FINAL REAL)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -2158,14 +2158,16 @@ local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HRP = Character:WaitForChild("HumanoidRootPart")
 
--- CONTROLE
 local AutoFarmEnabled = false
 local running = false
 
--- CONFIGURAÇÕES SEGURAS
-local SAFE_HEIGHT = 25      -- Altura acima dos mapas
-local MOVE_DELAY = 0.03    -- Velocidade (maior = mais lento)
-local FORWARD_OFFSET = -25 -- PASSA do baú (obrigatório)
+-- CONFIG
+local MOVE_DELAY = 0.03
+
+-- COORDENADAS
+local START_CFRAME = CFrame.new(-58.8980217, 82.142067, 216.661606)
+local END_TOP_CFRAME = CFrame.new(-55.4519196, 113.989349, 8636.70605)
+local END_DOWN_CFRAME = CFrame.new(-40.7226677, -333.664642, 8778.30273)
 
 -- Atualiza ao morrer
 LocalPlayer.CharacterAdded:Connect(function(char)
@@ -2173,72 +2175,39 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     HRP = char:WaitForChild("HumanoidRootPart")
 end)
 
--- PEGA O THE END REAL
-local function GetTheEnd()
-    local stages = workspace:FindFirstChild("BoatStages")
-    if not stages then return nil end
-
-    local normal = stages:FindFirstChild("NormalStages")
-    if not normal then return nil end
-
-    return normal:FindFirstChild("TheEnd")
-end
-
--- LOOP PRINCIPAL
 RunService.Heartbeat:Connect(function()
     if not AutoFarmEnabled or running or not HRP then return end
-
-    local theEnd = GetTheEnd()
-    if not theEnd then return end
-
     running = true
+
     HRP.Anchored = true
 
-    -- POSIÇÃO INICIAL
-    local startZ = HRP.Position.Z
-    local targetZ = theEnd:GetPivot().Position.Z + FORWARD_OFFSET
+    -- FASE 1: TELEPORTE INICIAL
+    HRP.CFrame = START_CFRAME
+    task.wait(0.3)
 
-    -- MANTÉM NO MEIO DO RIO (NUNCA MUDA X)
-    local fixedX = HRP.Position.X
+    -- FASE 2: ANDAR RETO ATÉ O TOPO DO THE END
+    local steps = 450
+    local startPos = HRP.Position
+    local endPos = END_TOP_CFRAME.Position
 
-    -- =========================
-    -- FASE 1: ATRAVESSA OS MAPAS (RETO, PELO MEIO)
-    -- =========================
-    local steps = 400
     for i = 1, steps do
         if not AutoFarmEnabled then break end
-
         local alpha = i / steps
-        local z = startZ + (targetZ - startZ) * alpha
-
-        HRP.CFrame = CFrame.new(
-            fixedX,
-            SAFE_HEIGHT,
-            z
-        )
-
+        HRP.CFrame = CFrame.new(startPos:Lerp(endPos, alpha))
         task.wait(MOVE_DELAY)
     end
 
-    -- =========================
-    -- FASE 2: DESCE SÓ DEPOIS DO THE END
-    -- =========================
-    local downSteps = 80
-    local startY = SAFE_HEIGHT
-    local endY = theEnd:GetPivot().Position.Y + 3
+    task.wait(0.2)
+
+    -- FASE 3: DESCIDA EXATA (SEM DESVIAR)
+    local downSteps = 160
+    local downStart = HRP.Position
+    local downEnd = END_DOWN_CFRAME.Position
 
     for i = 1, downSteps do
         if not AutoFarmEnabled then break end
-
         local alpha = i / downSteps
-        local y = startY + (endY - startY) * alpha
-
-        HRP.CFrame = CFrame.new(
-            fixedX,
-            y,
-            targetZ
-        )
-
+        HRP.CFrame = CFrame.new(downStart:Lerp(downEnd, alpha))
         task.wait(MOVE_DELAY)
     end
 
@@ -2246,19 +2215,15 @@ RunService.Heartbeat:Connect(function()
     running = false
 end)
 
--- TOGGLE NO SEU ESTILO
+-- BOTÃO (REDZ UI)
 Tab:AddToggle({
     Title = "Auto Farm",
-    Description = "Atravessa corretamente o The End e pega o tesouro",
+    Description = "Caminho fixo até o baú (sem reset)",
     Default = false,
     Callback = function(state)
         AutoFarmEnabled = state
-
-        if state then
-            Notify("Auto Farm Ativado", "Atravessando o The End corretamente.")
-        else
-            Notify("Auto Farm Desativado", "Auto Farm desligado.")
-            if HRP then HRP.Anchored = false end
+        if not state and HRP then
+            HRP.Anchored = false
         end
     end
 })

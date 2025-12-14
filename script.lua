@@ -2149,56 +2149,43 @@ Tab:AddButton({
 
 
 
--- SERVIÇOS
+-- AUTO FARM BUILD A BOAT
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HRP = Character:WaitForChild("HumanoidRootPart")
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
--- CONFIG
-local EnemiesFolder = workspace:WaitForChild("Enemies") -- MUDE SE PRECISAR
-local AutoFarm = false
-local Damage = 10
-local Distance = 5
+local AutoFarmEnabled = false
+local EndPosition = CFrame.new(0, 10, -1000) -- Final do mapa
 
--- FUNÇÃO DO FARM
-local function AutoFarmEnemies()
-    local nearest, dist = nil, math.huge
+-- Atualiza personagem ao morrer
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end)
 
-    for _, enemy in pairs(EnemiesFolder:GetChildren()) do
-        if enemy:FindFirstChild("Humanoid")
-        and enemy.Humanoid.Health > 0
-        and enemy:FindFirstChild("HumanoidRootPart") then
-
-            local d = (enemy.HumanoidRootPart.Position - HRP.Position).Magnitude
-            if d < dist then
-                dist = d
-                nearest = enemy
-            end
-        end
-    end
-
-    if nearest then
-        HRP.CFrame = nearest.HumanoidRootPart.CFrame * CFrame.new(0, 0, Distance)
-        nearest.Humanoid:TakeDamage(Damage)
-    end
-end
-
--- LOOP
+-- Loop do Auto Farm
 RunService.Heartbeat:Connect(function()
-    if AutoFarm then
-        AutoFarmEnemies()
+    if AutoFarmEnabled and HumanoidRootPart then
+        HumanoidRootPart.Velocity = Vector3.zero
+        HumanoidRootPart.CFrame = HumanoidRootPart.CFrame:Lerp(EndPosition, 0.025)
     end
 end)
 
--- BOTÃO (EXATAMENTE NO SEU FORMATO)
-Tab:AddButton({
-    Name = "Auto Farm Inimigos",
-    Debounce = 0.5,
-    Callback = function()
-        AutoFarm = not AutoFarm
-        warn("Auto Farm:", AutoFarm and "LIGADO" or "DESLIGADO")
+-- TOGGLE NO SEU ESTILO
+Tab:AddToggle({
+    Title = "Auto Farm",
+    Description = "Passa por todos os mapas e pega o tesouro automaticamente",
+    Default = false,
+    Callback = function(state)
+        AutoFarmEnabled = state
+
+        if state then
+            Notify("Auto Farm Ativado", "Indo automaticamente até o tesouro.")
+        else
+            Notify("Auto Farm Desativado", "Auto Farm desligado.")
+        end
     end
 })

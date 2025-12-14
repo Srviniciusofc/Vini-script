@@ -2144,3 +2144,63 @@ Tab:AddButton({
 
 
 
+--TESTE
+
+
+
+
+-- AUTO FARM INIMIGOS COM BOTÃO (REDZ UI)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
+
+-- CONFIG
+local EnemiesFolder = workspace:WaitForChild("Enemies") -- MUDE SE PRECISAR
+local AutoFarm = false
+local Damage = 10
+local Distance = 5
+
+-- FUNÇÃO: inimigo mais próximo
+local function getNearestEnemy()
+    local nearest, dist = nil, math.huge
+
+    for _, enemy in pairs(EnemiesFolder:GetChildren()) do
+        if enemy:FindFirstChild("Humanoid")
+        and enemy.Humanoid.Health > 0
+        and enemy:FindFirstChild("HumanoidRootPart") then
+
+            local d = (enemy.HumanoidRootPart.Position - HRP.Position).Magnitude
+            if d < dist then
+                dist = d
+                nearest = enemy
+            end
+        end
+    end
+
+    return nearest
+end
+
+-- LOOP AUTO FARM
+RunService.Heartbeat:Connect(function()
+    if not AutoFarm then return end
+
+    local enemy = getNearestEnemy()
+    if enemy then
+        HRP.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 0, Distance)
+        enemy.Humanoid:TakeDamage(Damage)
+    end
+end)
+
+-- BOTÃO NA REDZ UI
+Tab:AddButton({
+    Name = "Auto Farm Inimigos",
+    Debounce = 0.3,
+    Callback = function()
+        AutoFarm = not AutoFarm
+        warn("Auto Farm:", AutoFarm and "LIGADO" or "DESLIGADO")
+    end
+})

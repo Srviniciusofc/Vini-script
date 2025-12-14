@@ -2148,46 +2148,60 @@ Tab:AddButton({
 
 
 
--- AUTO FISH INSTANT - FISCH IT (FIX)
--- Detecta mordida e pega instantaneamente
+-- AUTO FISH NORMAL - FISCH IT
+-- Pesca automática (modo normal, estável, sem continue)
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 local AutoFish = false
+local fishing = false
 
--- FUNÇÃO PARA PEGAR A VARA
+-- Pega a vara equipada
 local function getRod()
     local char = LocalPlayer.Character
     if not char then return nil end
 
-    for _,v in pairs(char:GetChildren()) do
-        if v:IsA("Tool") then
-            return v
+    for _,tool in pairs(char:GetChildren()) do
+        if tool:IsA("Tool") then
+            return tool
         end
     end
+
+    return nil
 end
 
 -- LOOP PRINCIPAL
-RunService.Heartbeat:Connect(function()
-    if not AutoFish then return end
+task.spawn(function()
+    while true do
+        task.wait(0.2)
 
-    local rod = getRod()
-    if not rod then return end
+        if AutoFish and not fishing then
+            local rod = getRod()
 
-    -- CASO 1: atributo comum quando peixe aparece
-    if rod:GetAttribute("FishOn") == true then
-        rod:Activate()
-    end
+            if rod then
+                fishing = true
 
-    -- CASO 2: BoolValue / NumberValue
-    for _,v in pairs(rod:GetDescendants()) do
-        if v:IsA("BoolValue") and v.Value == true then
-            rod:Activate()
-        end
-        if v:IsA("NumberValue") and v.Value >= 1 then
-            rod:Activate()
+                -- JOGA A LINHA
+                pcall(function()
+                    rod:Activate()
+                end)
+
+                task.wait(1.5) -- tempo da linha cair
+
+                -- PUXA NORMALMENTE
+                for i = 1, 25 do
+                    if not AutoFish then break end
+                    pcall(function()
+                        rod:Activate()
+                    end)
+                    task.wait(0.15)
+                end
+
+                -- PAUSA ENTRE CICLOS
+                task.wait(1)
+                fishing = false
+            end
         end
     end
 end)
@@ -2195,7 +2209,7 @@ end)
 -- TOGGLE
 Tab:AddToggle({
     Title = "Auto Fish",
-    Description = "Pesca instantânea",
+    Description = "Pesca automática normal",
     Default = false,
     Callback = function(state)
         AutoFish = state

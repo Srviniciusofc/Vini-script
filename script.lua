@@ -2149,7 +2149,7 @@ Tab:AddButton({
 
 
 
--- AUTO FARM BUILD A BOAT FOR TREASURE (FINAL)
+-- AUTO FARM BUILD A BOAT FOR TREASURE (FINAL CORRETO)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -2158,14 +2158,14 @@ local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HRP = Character:WaitForChild("HumanoidRootPart")
 
--- CONTROLES
+-- CONTROLE
 local AutoFarmEnabled = false
-local moving = false
+local running = false
 
--- CONFIG
-local SAFE_HEIGHT = 22      -- Altura segura acima dos mapas
-local STEPS = 360           -- Quantidade de passos (mapas contam)
+-- CONFIGURAÇÕES SEGURAS
+local SAFE_HEIGHT = 25      -- Altura acima dos mapas
 local MOVE_DELAY = 0.03    -- Velocidade (maior = mais lento)
+local FORWARD_OFFSET = -25 -- PASSA do baú (obrigatório)
 
 -- Atualiza ao morrer
 LocalPlayer.CharacterAdded:Connect(function(char)
@@ -2173,81 +2173,89 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     HRP = char:WaitForChild("HumanoidRootPart")
 end)
 
--- ACHA O TRIGGER REAL DO OURO
-local function GetGoldTrigger()
+-- PEGA O THE END REAL
+local function GetTheEnd()
     local stages = workspace:FindFirstChild("BoatStages")
     if not stages then return nil end
 
     local normal = stages:FindFirstChild("NormalStages")
     if not normal then return nil end
 
-    local theEnd = normal:FindFirstChild("TheEnd")
-    if not theEnd then return nil end
-
-    for _,v in ipairs(theEnd:GetDescendants()) do
-        if v:IsA("BasePart") and v.Name:lower():find("trigger") then
-            return v
-        end
-    end
-
-    return theEnd:FindFirstChild("GoldenChest", true)
+    return normal:FindFirstChild("TheEnd")
 end
 
 -- LOOP PRINCIPAL
 RunService.Heartbeat:Connect(function()
-    if not AutoFarmEnabled or moving or not HRP then return end
+    if not AutoFarmEnabled or running or not HRP then return end
 
-    local trigger = GetGoldTrigger()
-    if not trigger then return end
+    local theEnd = GetTheEnd()
+    if not theEnd then return end
 
-    moving = true
+    running = true
     HRP.Anchored = true
 
-    -- POSIÇÕES
-    local startPos = HRP.Position
-    local endPos = Vector3.new(
-        trigger.Position.X,
-        SAFE_HEIGHT,
-        trigger.Position.Z - 10 -- passa do baú
-    )
+    -- POSIÇÃO INICIAL
+    local startZ = HRP.Position.Z
+    local targetZ = theEnd:GetPivot().Position.Z + FORWARD_OFFSET
 
-    -- FASE 1: ATRAVESSA OS MAPAS (POR CIMA)
-    for i = 1, STEPS do
+    -- MANTÉM NO MEIO DO RIO (NUNCA MUDA X)
+    local fixedX = HRP.Position.X
+
+    -- =========================
+    -- FASE 1: ATRAVESSA OS MAPAS (RETO, PELO MEIO)
+    -- =========================
+    local steps = 400
+    for i = 1, steps do
         if not AutoFarmEnabled then break end
-        local alpha = i / STEPS
-        HRP.CFrame = CFrame.new(startPos:Lerp(endPos, alpha))
+
+        local alpha = i / steps
+        local z = startZ + (targetZ - startZ) * alpha
+
+        HRP.CFrame = CFrame.new(
+            fixedX,
+            SAFE_HEIGHT,
+            z
+        )
+
         task.wait(MOVE_DELAY)
     end
 
-    -- FASE 2: DESCE ATÉ O BAÚ (ESSENCIAL)
-    local downTarget = Vector3.new(
-        endPos.X,
-        trigger.Position.Y + 2,
-        endPos.Z
-    )
+    -- =========================
+    -- FASE 2: DESCE SÓ DEPOIS DO THE END
+    -- =========================
+    local downSteps = 80
+    local startY = SAFE_HEIGHT
+    local endY = theEnd:GetPivot().Position.Y + 3
 
-    for i = 1, 70 do
+    for i = 1, downSteps do
         if not AutoFarmEnabled then break end
-        local alpha = i / 70
-        local y = endPos.Y + (downTarget.Y - endPos.Y) * alpha
-        HRP.CFrame = CFrame.new(endPos.X, y, endPos.Z)
+
+        local alpha = i / downSteps
+        local y = startY + (endY - startY) * alpha
+
+        HRP.CFrame = CFrame.new(
+            fixedX,
+            y,
+            targetZ
+        )
+
         task.wait(MOVE_DELAY)
     end
 
     HRP.Anchored = false
-    moving = false
+    running = false
 end)
 
 -- TOGGLE NO SEU ESTILO
 Tab:AddToggle({
     Title = "Auto Farm",
-    Description = "Atravessa todos os mapas e pega o tesouro automaticamente",
+    Description = "Atravessa corretamente o The End e pega o tesouro",
     Default = false,
     Callback = function(state)
         AutoFarmEnabled = state
 
         if state then
-            Notify("Auto Farm Ativado", "Indo até o tesouro automaticamente.")
+            Notify("Auto Farm Ativado", "Atravessando o The End corretamente.")
         else
             Notify("Auto Farm Desativado", "Auto Farm desligado.")
             if HRP then HRP.Anchored = false end

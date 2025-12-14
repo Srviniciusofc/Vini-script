@@ -2144,110 +2144,10 @@ Tab:AddButton({
 
 
 
---TESTE
+--Auto Loot
 
 
 
---==================================================
--- SERVICES
---==================================================
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-
---==================================================
--- VARIÁVEIS (TOGGLES)
---==================================================
-getgenv().KillAura = false
-getgenv().ESPEnemies = false
-getgenv().BringEnemies = false
-getgenv().AutoEat = false
-getgenv().AutoLoot = false
-
---==================================================
--- CONFIG
---==================================================
-local KILL_RANGE = 20
-local BRING_OFFSET = Vector3.new(0,0,-3)
-
---==================================================
--- FUNÇÕES ÚTEIS
---==================================================
-local function getHRP(char)
-    return char:FindFirstChild("HumanoidRootPart")
-end
-
---==================================================
--- KILL AURA
---==================================================
-task.spawn(function()
-    while task.wait(0.15) do
-        if KillAura and Character and getHRP(Character) then
-            for _,enemy in pairs(workspace.Map.Enemies:GetChildren()) do
-                local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-                local hum = enemy:FindFirstChildOfClass("Humanoid")
-                if ehrp and hum and hum.Health > 0 then
-                    local dist = (ehrp.Position - getHRP(Character).Position).Magnitude
-                    if dist <= KILL_RANGE then
-                        hum.Health = 0
-                    end
-                end
-            end
-        end
-    end
-end)
-
---==================================================
--- BRING ENEMIES
---==================================================
-task.spawn(function()
-    while task.wait(0.3) do
-        if BringEnemies and Character and getHRP(Character) then
-            for _,enemy in pairs(workspace.Map.Enemies:GetChildren()) do
-                local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-                if ehrp then
-                    ehrp.CFrame = getHRP(Character).CFrame * CFrame.new(BRING_OFFSET)
-                end
-            end
-        end
-    end
-end)
-
---==================================================
--- ESP INIMIGOS
---==================================================
-local ESPs = {}
-
-local function createESP(enemy)
-    if ESPs[enemy] then return end
-
-    local box = Instance.new("BoxHandleAdornment")
-    box.Size = Vector3.new(4,6,4)
-    box.Color3 = Color3.fromRGB(255,0,0)
-    box.Transparency = 0.5
-    box.AlwaysOnTop = true
-    box.ZIndex = 10
-    box.Adornee = enemy:FindFirstChild("HumanoidRootPart")
-    box.Parent = enemy
-
-    ESPs[enemy] = box
-end
-
-task.spawn(function()
-    while task.wait(0.5) do
-        for _,enemy in pairs(workspace.Map.Enemies:GetChildren()) do
-            if ESPEnemies then
-                createESP(enemy)
-            else
-                if ESPs[enemy] then
-                    ESPs[enemy]:Destroy()
-                    ESPs[enemy] = nil
-                end
-            end
-        end
-    end
-end)
 
 --==================================================
 -- AUTO LOOT
@@ -2264,55 +2164,6 @@ task.spawn(function()
     end
 end)
 
---==================================================
--- AUTO EAT
---==================================================
-task.spawn(function()
-    while task.wait(1) do
-        if AutoEat then
-            for _,tool in pairs(LocalPlayer.Backpack:GetChildren()) do
-                if string.find(tool.Name:lower(),"food") 
-                or string.find(tool.Name:lower(),"burger")
-                or string.find(tool.Name:lower(),"eat") then
-                    tool.Parent = Character
-                    task.wait(0.1)
-                    tool:Activate()
-                end
-            end
-        end
-    end
-end)
-
---==================================================
--- TOGGLES (UI)
---==================================================
-
-Tab:AddToggle({
-    Title = "Kill Aura",
-    Description = "Mata inimigos próximos",
-    Default = false,
-    Callback = function(v)
-        KillAura = v
-    end
-})
-
-Tab:AddToggle({
-    Title = "ESP Inimigos",
-    Description = "Mostra inimigos através das paredes",
-    Default = false,
-    Callback = function(v)
-        ESPEnemies = v
-    end
-})
-
-Tab:AddToggle({
-    Title = "Bring Inimigos",
-    Description = "Puxa inimigos até você",
-    Default = false,
-    Callback = function(v)
-        BringEnemies = v
-    end
-})
 
 Tab:AddToggle({
     Title = "Auto Loot",
@@ -2323,11 +2174,155 @@ Tab:AddToggle({
     end
 })
 
+
+
+
+
+
+
+
+
+
+--teste
+
+
+
+
+
+--==============================
+-- SERVICES
+--==============================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+--==============================
+-- FLAGS (TOGGLES)
+--==============================
+local KillAura = false
+local ESPEnemies = false
+
+--==============================
+-- CONFIG
+--==============================
+local KILL_DISTANCE = 30
+
+--==============================
+-- PATHS REAIS
+--==============================
+local Map = workspace:WaitForChild("Map")
+local EnemiesFolder = Map:FindFirstChild("Enemies")
+local JellyfishFolder = Map:FindFirstChild("Jellyfish")
+
+--==============================
+-- ESP STORAGE
+--==============================
+local ESPs = {}
+
+--==============================
+-- FUNÇÃO ESP
+--==============================
+local function AddESP(enemy)
+	if ESPs[enemy] then return end
+	if not enemy:FindFirstChild("HumanoidRootPart") then return end
+
+	local box = Instance.new("BoxHandleAdornment")
+	box.Name = "ESP"
+	box.Adornee = enemy.HumanoidRootPart
+	box.Size = Vector3.new(4,6,4)
+	box.AlwaysOnTop = true
+	box.ZIndex = 10
+	box.Transparency = 0.5
+	box.Color3 = Color3.fromRGB(255, 0, 0)
+	box.Parent = enemy
+
+	ESPs[enemy] = box
+end
+
+local function RemoveESP()
+	for _,v in pairs(ESPs) do
+		if v then v:Destroy() end
+	end
+	ESPs = {}
+end
+
+--==============================
+-- KILL SEM ARMA
+--==============================
+local function KillEnemy(enemy)
+	local hum = enemy:FindFirstChildOfClass("Humanoid")
+	if hum and hum.Health > 0 then
+		hum:TakeDamage(999999) -- mata sem arma
+	end
+end
+
+--==============================
+-- SCAN DE PASTA
+--==============================
+local function ScanFolder(folder)
+	if not folder then return end
+	if not LocalPlayer.Character then return end
+
+	local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	for _,enemy in ipairs(folder:GetChildren()) do
+		if enemy:IsA("Model")
+			and enemy:FindFirstChild("HumanoidRootPart")
+			and enemy:FindFirstChildOfClass("Humanoid") then
+
+			local dist = (enemy.HumanoidRootPart.Position - hrp.Position).Magnitude
+
+			-- ESP
+			if ESPEnemies then
+				AddESP(enemy)
+			end
+
+			-- KILL AURA
+			if KillAura and dist <= KILL_DISTANCE then
+				KillEnemy(enemy)
+			end
+		end
+	end
+end
+
+--==============================
+-- LOOP PRINCIPAL
+--==============================
+RunService.Heartbeat:Connect(function()
+	if not ESPEnemies then
+		RemoveESP()
+	end
+
+	-- Enemies > BikiniBottom
+	if EnemiesFolder and EnemiesFolder:FindFirstChild("BikiniBottom") then
+		ScanFolder(EnemiesFolder.BikiniBottom)
+	end
+
+	-- Jellyfish > BikiniBottom
+	if JellyfishFolder and JellyfishFolder:FindFirstChild("BikiniBottom") then
+		ScanFolder(JellyfishFolder.BikiniBottom)
+	end
+end)
+
+--==============================
+-- TOGGLES (PADRÃO SEU)
+--==============================
 Tab:AddToggle({
-    Title = "Auto Eat",
-    Description = "Come automaticamente",
-    Default = false,
-    Callback = function(v)
-        AutoEat = v
-    end
+	Title = "Kill Aura (Sem Arma)",
+	Description = "Mata Jellyfish automaticamente",
+	Default = false,
+	Callback = function(state)
+		KillAura = state
+	end
+})
+
+Tab:AddToggle({
+	Title = "ESP Inimigos",
+	Description = "Mostra Jellyfish através das paredes",
+	Default = false,
+	Callback = function(state)
+		ESPEnemies = state
+	end
 })

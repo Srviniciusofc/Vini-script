@@ -2149,28 +2149,43 @@ Tab:AddButton({
 
 
 
--- AUTO FARM BUILD A BOAT
+-- AUTO FARM BUILD A BOAT (FIX REAL)
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local HRP = Character:WaitForChild("HumanoidRootPart")
 
 local AutoFarmEnabled = false
-local EndPosition = CFrame.new(0, 10, -1000) -- Final do mapa
 
 -- Atualiza personagem ao morrer
 LocalPlayer.CharacterAdded:Connect(function(char)
     Character = char
-    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+    HRP = char:WaitForChild("HumanoidRootPart")
 end)
 
--- Loop do Auto Farm
+-- ACHA O BAÚ DO TESOURO
+local function GetTreasure()
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v.Name == "TreasureChest" and v:IsA("Model") then
+            return v:FindFirstChildWhichIsA("BasePart")
+        end
+    end
+end
+
+-- LOOP DO AUTO FARM
 RunService.Heartbeat:Connect(function()
-    if AutoFarmEnabled and HumanoidRootPart then
-        HumanoidRootPart.Velocity = Vector3.zero
-        HumanoidRootPart.CFrame = HumanoidRootPart.CFrame:Lerp(EndPosition, 0.025)
+    if AutoFarmEnabled and HRP then
+        local chest = GetTreasure()
+        if chest then
+            HRP.Velocity = Vector3.zero
+            HRP.CFrame = HRP.CFrame:Lerp(
+                chest.CFrame * CFrame.new(0, 3, 0),
+                0.03
+            )
+        end
     end
 end)
 
@@ -2183,7 +2198,7 @@ Tab:AddToggle({
         AutoFarmEnabled = state
 
         if state then
-            Notify("Auto Farm Ativado", "Indo automaticamente até o tesouro.")
+            Notify("Auto Farm Ativado", "Indo até o tesouro correto.")
         else
             Notify("Auto Farm Desativado", "Auto Farm desligado.")
         end

@@ -2148,82 +2148,89 @@ Tab:AddButton({
 
 
 
-
--- AUTO FARM BUILD A BOAT (3 PONTOS FIXOS - FINAL REAL)
+-- AUTO FARM BUILD A BOAT FOR TREASURE
+-- Ciclo correto: Inicio -> Topo -> Descida -> Continua reto -> Morre -> Reinicia
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HRP = Character:WaitForChild("HumanoidRootPart")
 
 local AutoFarmEnabled = false
 local running = false
 
--- CONFIG
-local MOVE_DELAY = 0.03
+-- AJUSTES DE VELOCIDADE
+local MOVE_DELAY = 0.03 -- quanto maior, mais lento
 
--- COORDENADAS
+-- COORDENADAS (AS QUE VOCÊ MOSTROU)
 local START_CFRAME = CFrame.new(-58.8980217, 82.142067, 216.661606)
-local END_TOP_CFRAME = CFrame.new(-55.4519196, 113.989349, 8636.70605)
+local TOP_CFRAME   = CFrame.new(-55.4519196, 113.989349, 8636.70605)
 local END_DOWN_CFRAME = CFrame.new(-40.7226677, -333.664642, 8778.30273)
 
--- Atualiza ao morrer
-LocalPlayer.CharacterAdded:Connect(function(char)
-    Character = char
-    HRP = char:WaitForChild("HumanoidRootPart")
-end)
-
-RunService.Heartbeat:Connect(function()
-    if not AutoFarmEnabled or running or not HRP then return end
+-- FUNÇÃO PRINCIPAL
+local function StartAutoFarm()
+    if running then return end
     running = true
 
-    HRP.Anchored = true
+    while AutoFarmEnabled do
+        local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local HRP = Character:WaitForChild("HumanoidRootPart")
+        local Humanoid = Character:WaitForChild("Humanoid")
 
-    -- FASE 1: TELEPORTE INICIAL
-    HRP.CFrame = START_CFRAME
-    task.wait(0.3)
+        -- FASE 1: TELEPORTAR PARA O INÍCIO
+        HRP.Anchored = true
+        HRP.CFrame = START_CFRAME
+        task.wait(0.5)
 
-    -- FASE 2: ANDAR RETO ATÉ O TOPO DO THE END
-    local steps = 450
-    local startPos = HRP.Position
-    local endPos = END_TOP_CFRAME.Position
+        -- FASE 2: IR ATÉ O TOPO (RETO PELO MAPA)
+        local stepsUp = 300
+        local startPos = HRP.Position
+        local endPos = TOP_CFRAME.Position
 
-    for i = 1, steps do
-        if not AutoFarmEnabled then break end
-        local alpha = i / steps
-        HRP.CFrame = CFrame.new(startPos:Lerp(endPos, alpha))
-        task.wait(MOVE_DELAY)
+        for i = 1, stepsUp do
+            if not AutoFarmEnabled then break end
+            HRP.CFrame = CFrame.new(startPos:Lerp(endPos, i / stepsUp))
+            task.wait(MOVE_DELAY)
+        end
+
+        task.wait(0.2)
+
+        -- FASE 3: DESCIDA CERTA (THE END)
+        local stepsDown = 180
+        local downStart = HRP.Position
+        local downEnd = END_DOWN_CFRAME.Position
+
+        for i = 1, stepsDown do
+            if not AutoFarmEnabled then break end
+            HRP.CFrame = CFrame.new(downStart:Lerp(downEnd, i / stepsDown))
+            task.wait(MOVE_DELAY)
+        end
+
+        task.wait(0.1)
+
+        -- FASE 4: CONTINUAR RETO ATÉ MORRER (SEM RESET FORÇADO)
+        HRP.Anchored = false
+
+        while AutoFarmEnabled and Humanoid.Health > 0 do
+            HRP.CFrame = HRP.CFrame + Vector3.new(0, 0, 3)
+            task.wait(0.05)
+        end
+
+        -- ESPERA RESPWAN
+        repeat task.wait(0.2) until LocalPlayer.Character ~= Character
     end
 
-    task.wait(0.2)
-
-    -- FASE 3: DESCIDA EXATA (SEM DESVIAR)
-    local downSteps = 160
-    local downStart = HRP.Position
-    local downEnd = END_DOWN_CFRAME.Position
-
-    for i = 1, downSteps do
-        if not AutoFarmEnabled then break end
-        local alpha = i / downSteps
-        HRP.CFrame = CFrame.new(downStart:Lerp(downEnd, alpha))
-        task.wait(MOVE_DELAY)
-    end
-
-    HRP.Anchored = false
     running = false
-end)
+end
 
--- BOTÃO (REDZ UI)
+-- TOGGLE (NO FORMATO QUE VOCÊ PEDIU)
 Tab:AddToggle({
     Title = "Auto Farm",
-    Description = "Caminho fixo até o baú (sem reset)",
+    Description = "Auto Farm Build A Boat (Completo)",
     Default = false,
     Callback = function(state)
         AutoFarmEnabled = state
-        if not state and HRP then
-            HRP.Anchored = false
+        if state then
+            StartAutoFarm()
         end
     end
 })

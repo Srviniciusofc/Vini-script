@@ -2148,3 +2148,73 @@ Tab:AddButton({
 
 
 
+-- AUTO PARRY SPAM - BLADE BALL
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local LocalPlayer = Players.LocalPlayer
+local AutoParry = false
+local Connection
+
+-- CONFIG
+local PARRY_DISTANCE = 30
+local SPAM_DELAY = 0.05
+
+-- TOQUE DE TELA (PARRY)
+local function tap()
+    VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.Begin, Vector2.new(500, 500))
+    task.wait()
+    VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.End, Vector2.new(500, 500))
+end
+
+-- LOOP SPAM
+local function StartParry()
+    if Connection then Connection:Disconnect() end
+
+    Connection = RunService.Heartbeat:Connect(function()
+        if not AutoParry then return end
+
+        local char = LocalPlayer.Character
+        if not char then return end
+
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+
+        local ballsFolder = Workspace:FindFirstChild("Balls")
+        if not ballsFolder then return end
+
+        for _,ball in pairs(ballsFolder:GetChildren()) do
+            if ball:IsA("BasePart") then
+                local dist = (ball.Position - hrp.Position).Magnitude
+                if dist <= PARRY_DISTANCE then
+                    pcall(tap)
+                end
+            end
+        end
+    end)
+end
+
+local function StopParry()
+    if Connection then
+        Connection:Disconnect()
+        Connection = nil
+    end
+end
+
+-- TOGGLE (DO JEITO QUE VOCÊ PEDIU)
+Tab:AddToggle({
+    Title = "Auto Parry (Spam)",
+    Description = "Spamma parry automaticamente",
+    Default = false,
+    Callback = function(state)
+        AutoParry = state
+        if state then
+            StartParry()
+        else
+            StopParry()
+        end
+    end
+})

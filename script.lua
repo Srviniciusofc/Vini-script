@@ -2149,24 +2149,25 @@ Tab:AddButton({
 
 
 -- AUTO FARM BUILD A BOAT FOR TREASURE
--- Ciclo correto: Inicio -> Topo -> Descida -> Continua reto -> Morre -> Reinicia
+-- Inicio -> Topo -> Descida -> Segue reto até coord final -> Morre -> Reinicia
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 local AutoFarmEnabled = false
 local running = false
 
--- AJUSTES DE VELOCIDADE
-local MOVE_DELAY = 0.03 -- quanto maior, mais lento
+-- VELOCIDADE
+local MOVE_DELAY = 0.03
 
--- COORDENADAS (AS QUE VOCÊ MOSTROU)
-local START_CFRAME = CFrame.new(-58.8980217, 82.142067, 216.661606)
+-- COORDENADAS (SOMENTE X, Y, Z)
+local START_CFRAME = CFrame.new(-68.2295532, 8.38154984, 277.108795)
 local TOP_CFRAME   = CFrame.new(-55.4519196, 113.989349, 8636.70605)
 local END_DOWN_CFRAME = CFrame.new(-40.7226677, -333.664642, 8778.30273)
 
--- FUNÇÃO PRINCIPAL
+-- 🔹 COORDENADA FINAL APÓS A DESCIDA (A QUE VOCÊ PASSOU)
+local FINAL_FORWARD_CFRAME = CFrame.new(-60.3750305, -362.906433, 9486.87207)
+
 local function StartAutoFarm()
     if running then return end
     running = true
@@ -2181,7 +2182,7 @@ local function StartAutoFarm()
         HRP.CFrame = START_CFRAME
         task.wait(0.5)
 
-        -- FASE 2: IR ATÉ O TOPO (RETO PELO MAPA)
+        -- FASE 2: IR ATÉ O TOPO
         local stepsUp = 300
         local startPos = HRP.Position
         local endPos = TOP_CFRAME.Position
@@ -2194,7 +2195,7 @@ local function StartAutoFarm()
 
         task.wait(0.2)
 
-        -- FASE 3: DESCIDA CERTA (THE END)
+        -- FASE 3: DESCIDA (THE END)
         local stepsDown = 180
         local downStart = HRP.Position
         local downEnd = END_DOWN_CFRAME.Position
@@ -2207,25 +2208,35 @@ local function StartAutoFarm()
 
         task.wait(0.1)
 
-        -- FASE 4: CONTINUAR RETO ATÉ MORRER (SEM RESET FORÇADO)
+        -- FASE 4: SEGUIR RETO ATÉ A COORDENADA FINAL
+        local stepsForward = 260
+        local forwardStart = HRP.Position
+        local forwardEnd = FINAL_FORWARD_CFRAME.Position
+
+        for i = 1, stepsForward do
+            if not AutoFarmEnabled then break end
+            HRP.CFrame = CFrame.new(forwardStart:Lerp(forwardEnd, i / stepsForward))
+            task.wait(MOVE_DELAY)
+        end
+
+        -- LIBERA O PERSONAGEM PRA MORRER NATURALMENTE
         HRP.Anchored = false
 
         while AutoFarmEnabled and Humanoid.Health > 0 do
-            HRP.CFrame = HRP.CFrame + Vector3.new(0, 0, 3)
-            task.wait(0.05)
+            task.wait(0.1)
         end
 
-        -- ESPERA RESPWAN
+        -- ESPERA RESPAWN
         repeat task.wait(0.2) until LocalPlayer.Character ~= Character
     end
 
     running = false
 end
 
--- TOGGLE (NO FORMATO QUE VOCÊ PEDIU)
+-- TOGGLE
 Tab:AddToggle({
     Title = "Auto Farm",
-    Description = "Auto Farm Build A Boat (Completo)",
+    Description = "Auto Farm Build A Boat (Rota Correta)",
     Default = false,
     Callback = function(state)
         AutoFarmEnabled = state

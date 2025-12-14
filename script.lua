@@ -2148,41 +2148,54 @@ Tab:AddButton({
 
 
 
--- AUTO FISH INSTANT - FISCH IT
--- Pega o peixe imediatamente quando aparece
+-- AUTO FISH INSTANT - FISCH IT (FIX)
+-- Detecta mordida e pega instantaneamente
 
 local Players = game:GetService("Players")
-local ProximityPromptService = game:GetService("ProximityPromptService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 local AutoFish = false
 
--- 🔁 AUTO PEGAR PEIXE VIA PROMPT (MAIS COMUM)
-ProximityPromptService.PromptShown:Connect(function(prompt)
-    if not AutoFish then return end
+-- FUNÇÃO PARA PEGAR A VARA
+local function getRod()
+    local char = LocalPlayer.Character
+    if not char then return nil end
 
-    -- nomes comuns usados em Fisch It
-    if prompt.Name == "Catch" or prompt.Name == "FishPrompt" or prompt.ActionText == "Catch" then
-        task.wait() -- instantâneo
-        fireproximityprompt(prompt)
-    end
-end)
-
--- 🔁 AUTO PEGAR PEIXE VIA REMOTE (CASO USE REMOTE)
-for _,v in pairs(game:GetDescendants()) do
-    if v:IsA("RemoteEvent") and string.lower(v.Name):find("fish") then
-        v.OnClientEvent:Connect(function()
-            if AutoFish then
-                v:FireServer()
-            end
-        end)
+    for _,v in pairs(char:GetChildren()) do
+        if v:IsA("Tool") then
+            return v
+        end
     end
 end
 
--- 🔘 TOGGLE
+-- LOOP PRINCIPAL
+RunService.Heartbeat:Connect(function()
+    if not AutoFish then return end
+
+    local rod = getRod()
+    if not rod then return end
+
+    -- CASO 1: atributo comum quando peixe aparece
+    if rod:GetAttribute("FishOn") == true then
+        rod:Activate()
+    end
+
+    -- CASO 2: BoolValue / NumberValue
+    for _,v in pairs(rod:GetDescendants()) do
+        if v:IsA("BoolValue") and v.Value == true then
+            rod:Activate()
+        end
+        if v:IsA("NumberValue") and v.Value >= 1 then
+            rod:Activate()
+        end
+    end
+end)
+
+-- TOGGLE
 Tab:AddToggle({
     Title = "Auto Fish",
-    Description = "Pesca instantânea (sem delay)",
+    Description = "Pesca instantânea",
     Default = false,
     Callback = function(state)
         AutoFish = state

@@ -2149,8 +2149,6 @@ Tab:AddButton({
 
 
 
--- AUTO FARM BUILD A BOAT (FIX REAL)
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -2166,25 +2164,27 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     HRP = char:WaitForChild("HumanoidRootPart")
 end)
 
--- ACHA O BAÚ DO TESOURO
-local function GetTreasure()
-    for _,v in pairs(workspace:GetDescendants()) do
-        if v.Name == "TreasureChest" and v:IsA("Model") then
-            return v:FindFirstChildWhichIsA("BasePart")
-        end
-    end
+-- PEGA O BAÚ REAL DO JOGO
+local function GetGoldenChest()
+    local stages = workspace:FindFirstChild("BoatStages")
+    if not stages then return nil end
+
+    local normal = stages:FindFirstChild("NormalStages")
+    if not normal then return nil end
+
+    local theEnd = normal:FindFirstChild("TheEnd")
+    if not theEnd then return nil end
+
+    return theEnd:FindFirstChild("GoldenChest")
 end
 
 -- LOOP DO AUTO FARM
 RunService.Heartbeat:Connect(function()
     if AutoFarmEnabled and HRP then
-        local chest = GetTreasure()
-        if chest then
+        local chest = GetGoldenChest()
+        if chest and chest:IsA("BasePart") then
             HRP.Velocity = Vector3.zero
-            HRP.CFrame = HRP.CFrame:Lerp(
-                chest.CFrame * CFrame.new(0, 3, 0),
-                0.03
-            )
+            HRP.CFrame = chest.CFrame * CFrame.new(0, 5, 0)
         end
     end
 end)
@@ -2192,13 +2192,13 @@ end)
 -- TOGGLE NO SEU ESTILO
 Tab:AddToggle({
     Title = "Auto Farm",
-    Description = "Passa por todos os mapas e pega o tesouro automaticamente",
+    Description = "Atravessa todos os mapas e pega o tesouro automaticamente",
     Default = false,
     Callback = function(state)
         AutoFarmEnabled = state
 
         if state then
-            Notify("Auto Farm Ativado", "Indo até o tesouro correto.")
+            Notify("Auto Farm Ativado", "Indo direto ao tesouro.")
         else
             Notify("Auto Farm Desativado", "Auto Farm desligado.")
         end

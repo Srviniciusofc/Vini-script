@@ -2148,73 +2148,220 @@ Tab:AddButton({
 
 
 
--- AUTO PARRY SPAM - BLADE BALL
+-- SURVIVE BIKINI BOTTOM ☠️ [BETA]
+-- Kill Aura + Bring Enemies + ESP Inimigos + Auto Eat
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
-local AutoParry = false
-local Connection
 
--- CONFIG
-local PARRY_DISTANCE = 30
-local SPAM_DELAY = 0.05
+-- ===== CONFIG =====
+local ENEMIES_FOLDER_NAME = "Enemies" -- MUDE SE NECESSÁRIO
+local KILL_DISTANCE = 20
+local EAT_HEALTH_PERCENT = 0.6 -- 60%
 
--- TOQUE DE TELA (PARRY)
-local function tap()
-    VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.Begin, Vector2.new(500, 500))
-    task.wait()
-    VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.End, Vector2.new(500, 500))
+-- ===== ESTADOS =====
+local KillAura = false
+local BringEnemies = false
+local ESPEnabled = false
+local AutoEat = false
+
+local AuraConnection
+local EatConnection
+
+-- ===== FUNÇÕES ÚTEIS =====
+local function getHRP(char)
+    return char and char:FindFirstChild("HumanoidRootPart")
 end
 
--- LOOP SPAM
-local function StartParry()
-    if Connection then Connection:Disconnect() end
+local function getHumanoid(char)
+    return char and char:FindFirstChildWhichIsA("Humanoid")
+end
 
-    Connection = RunService.Heartbeat:Connect(function()
-        if not AutoParry then return end
+-- ===== AUTO EAT =====
+local function findFoodTool()
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not backpack then return nil end
+
+    for _,tool in pairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            local name = tool.Name:lower()
+            if name:find("burger") or name:find("food") or name:find("eat") or name:find("pizza") then
+                return tool
+            end
+        end
+    end
+end
+
+local function StartAutoEat()
+    if EatConnection then EatConnection:Disconnect() end
+
+    EatConnection = RunService.Heartbeat:Connect(function()
+        if not AutoEat then return end
 
         local char = LocalPlayer.Character
-        if not char then return end
+        local humanoid = getHumanoid(char)
+        if not humanoid or humanoid.Health <= 0 then return end
 
-        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if humanoid.Health / humanoid.MaxHealth <= EAT_HEALTH_PERCENT then
+            local food = findFoodTool()
+            if food then
+                food.Parent = char
+                task.wait(0.1)
+                pcall(function()
+                    food:Activate()
+                end)
+            end
+        end
+    end)
+end
+
+local function StopAutoEat()
+    if EatConnection then
+        EatConnection:Disconnect()
+        EatConnection = nil
+    end
+end
+
+-- ===== ESP =====
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "EnemyESP"
+ESPFolder.Parent = CoreGui
+
+local function clearESP()
+    ESPFolder:ClearAllChildren()
+end
+
+local function createESP(enemy)
+    if ESPFolder:FindFirstChild(enemy:GetDebugId()) then return end
+
+    local hrp = enemy:FindFirstChild("HumanoidRootPart")
+    local humanoid = enemy:FindFirstChildWhichIsA("Humanoid")
+    if not hrp or not humanoid then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = enemy:GetDebugId()
+    billboard.Adornee = hrp
+    billboard.Size = UDim2.new(0, 160, 0, 45)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = ESPFolder
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = Color3.fromRGB(255, 70, 70)
+    text.TextStrokeTransparency = 0
+    text.TextScaled = true
+    text.Font = Enum.Font.SourceSansBold
+    text.Parent = billboard
+
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if not ESPEnabled or not enemy.Parent or humanoid.Health <= 0 then
+            conn:Disconnect()
+            billboard:Destroy()
+            return
+        end
+        text.Text = enemy.Name .. " | HP: " .. math.floor(humanoid.Health)
+    end)
+end
+
+local function refreshESP()
+    if not ESPEnabled then return end
+    local folder = Workspace:FindFirstChild(ENEMIES_FOLDER_NAME)
+    if not folder then return end
+
+    for _,enemy in pairs(folder:GetChildren()) do
+        createESP(enemy)
+    end
+end
+
+-- ===== AURA / BRING =====
+local function StartAura()
+    if AuraConnection then AuraConnection:Disconnect() end
+
+    AuraConnection = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        local hrp = getHRP(char)
         if not hrp then return end
 
-        local ballsFolder = Workspace:FindFirstChild("Balls")
-        if not ballsFolder then return end
+        local folder = Workspace:FindFirstChild(ENEMIES_FOLDER_NAME)
+        if not folder then return end
 
-        for _,ball in pairs(ballsFolder:GetChildren()) do
-            if ball:IsA("BasePart") then
-                local dist = (ball.Position - hrp.Position).Magnitude
-                if dist <= PARRY_DISTANCE then
-                    pcall(tap)
+        for _,enemy in pairs(folder:GetChildren()) do
+            local ehrp = getHRP(enemy)
+            local humanoid = enemy:FindFirstChildWhichIsA("Humanoid")
+
+            if ehrp and humanoid and humanoid.Health > 0 then
+                local dist = (ehrp.Position - hrp.Position).Magnitude
+
+                if BringEnemies then
+                    ehrp.CFrame = hrp.CFrame * CFrame.new(0, 0, -3)
+                end
+
+                if KillAura and dist <= KILL_DISTANCE then
+                    humanoid.Health = 0
                 end
             end
         end
     end)
 end
 
-local function StopParry()
-    if Connection then
-        Connection:Disconnect()
-        Connection = nil
+local function StopAura()
+    if AuraConnection then
+        AuraConnection:Disconnect()
+        AuraConnection = nil
     end
 end
 
--- TOGGLE (DO JEITO QUE VOCÊ PEDIU)
+-- ===== TOGGLES =====
+
 Tab:AddToggle({
-    Title = "Auto Parry (Spam)",
-    Description = "Spamma parry automaticamente",
+    Title = "Kill Aura",
+    Description = "Mata inimigos próximos",
     Default = false,
     Callback = function(state)
-        AutoParry = state
-        if state then
-            StartParry()
-        else
-            StopParry()
-        end
+        KillAura = state
+        if state or BringEnemies then StartAura() else StopAura() end
     end
 })
+
+Tab:AddToggle({
+    Title = "Bring Enemies",
+    Description = "Puxa inimigos até você",
+    Default = false,
+    Callback = function(state)
+        BringEnemies = state
+        if state or KillAura then StartAura() else StopAura() end
+    end
+})
+
+Tab:AddToggle({
+    Title = "ESP Inimigos",
+    Description = "Mostra nome e vida dos inimigos",
+    Default = false,
+    Callback = function(state)
+        ESPEnabled = state
+        if not state then clearESP() else refreshESP() end
+    end
+})
+
+Tab:AddToggle({
+    Title = "Auto Eat",
+    Description = "Come automaticamente quando HP estiver baixo",
+    Default = false,
+    Callback = function(state)
+        AutoEat = state
+        if state then StartAutoEat() else StopAutoEat() end
+    end
+})
+
+-- ===== AUTO UPDATE ESP =====
+Workspace.ChildAdded:Connect(function()
+    task.wait(0.5)
+    refreshESP()
+end)

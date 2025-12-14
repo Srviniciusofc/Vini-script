@@ -2198,10 +2198,10 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 --==============================
--- FLAGS (TOGGLES)
+-- FLAGS GLOBAIS (IMPORTANTE)
 --==============================
-local KillAura = false
-local ESPEnemies = false
+getgenv().KillAura = false
+getgenv().ESPEnemies = false
 
 --==============================
 -- CONFIG
@@ -2209,7 +2209,7 @@ local ESPEnemies = false
 local KILL_DISTANCE = 30
 
 --==============================
--- PATHS REAIS
+-- PATHS
 --==============================
 local Map = workspace:WaitForChild("Map")
 local EnemiesFolder = Map:FindFirstChild("Enemies")
@@ -2221,30 +2221,29 @@ local JellyfishFolder = Map:FindFirstChild("Jellyfish")
 local ESPs = {}
 
 --==============================
--- FUNÇÃO ESP
+-- ESP FUNCTIONS
 --==============================
+local function ClearESP()
+	for _,v in pairs(ESPs) do
+		if v then v:Destroy() end
+	end
+	ESPs = {}
+end
+
 local function AddESP(enemy)
 	if ESPs[enemy] then return end
 	if not enemy:FindFirstChild("HumanoidRootPart") then return end
 
 	local box = Instance.new("BoxHandleAdornment")
-	box.Name = "ESP"
 	box.Adornee = enemy.HumanoidRootPart
 	box.Size = Vector3.new(4,6,4)
 	box.AlwaysOnTop = true
 	box.ZIndex = 10
 	box.Transparency = 0.5
-	box.Color3 = Color3.fromRGB(255, 0, 0)
+	box.Color3 = Color3.fromRGB(255,0,0)
 	box.Parent = enemy
 
 	ESPs[enemy] = box
-end
-
-local function RemoveESP()
-	for _,v in pairs(ESPs) do
-		if v then v:Destroy() end
-	end
-	ESPs = {}
 end
 
 --==============================
@@ -2253,12 +2252,12 @@ end
 local function KillEnemy(enemy)
 	local hum = enemy:FindFirstChildOfClass("Humanoid")
 	if hum and hum.Health > 0 then
-		hum:TakeDamage(999999) -- mata sem arma
+		hum:TakeDamage(9e9)
 	end
 end
 
 --==============================
--- SCAN DE PASTA
+-- SCAN FOLDER
 --==============================
 local function ScanFolder(folder)
 	if not folder then return end
@@ -2275,12 +2274,12 @@ local function ScanFolder(folder)
 			local dist = (enemy.HumanoidRootPart.Position - hrp.Position).Magnitude
 
 			-- ESP
-			if ESPEnemies then
+			if getgenv().ESPEnemies then
 				AddESP(enemy)
 			end
 
 			-- KILL AURA
-			if KillAura and dist <= KILL_DISTANCE then
+			if getgenv().KillAura and dist <= KILL_DISTANCE then
 				KillEnemy(enemy)
 			end
 		end
@@ -2288,11 +2287,11 @@ local function ScanFolder(folder)
 end
 
 --==============================
--- LOOP PRINCIPAL
+-- MAIN LOOP
 --==============================
 RunService.Heartbeat:Connect(function()
-	if not ESPEnemies then
-		RemoveESP()
+	if not getgenv().ESPEnemies then
+		ClearESP()
 	end
 
 	-- Enemies > BikiniBottom
@@ -2307,14 +2306,14 @@ RunService.Heartbeat:Connect(function()
 end)
 
 --==============================
--- TOGGLES (PADRÃO SEU)
+-- TOGGLES (AGORA FUNCIONAM)
 --==============================
 Tab:AddToggle({
 	Title = "Kill Aura (Sem Arma)",
 	Description = "Mata Jellyfish automaticamente",
 	Default = false,
 	Callback = function(state)
-		KillAura = state
+		getgenv().KillAura = state
 	end
 })
 
@@ -2323,6 +2322,6 @@ Tab:AddToggle({
 	Description = "Mostra Jellyfish através das paredes",
 	Default = false,
 	Callback = function(state)
-		ESPEnemies = state
+		getgenv().ESPEnemies = state
 	end
 })

@@ -2159,14 +2159,19 @@ local HRP = Character:WaitForChild("HumanoidRootPart")
 local AutoFarmEnabled = false
 local moving = false
 
+-- CONFIGURAÇÕES
+local SAFE_HEIGHT = 12       -- Altura acima dos mapas
+local SPEED = 0.02           -- Quanto menor, mais lento e seguro
+local STEPS = 350            -- Mais steps = passa todos os mapas
+
 -- Atualiza ao morrer
 LocalPlayer.CharacterAdded:Connect(function(char)
     Character = char
     HRP = char:WaitForChild("HumanoidRootPart")
 end)
 
--- Posição FINAL REAL do mapa (The End)
-local function GetEndCFrame()
+-- ACHA O TRIGGER REAL DO BAÚ
+local function GetGoldTrigger()
     local stages = workspace:FindFirstChild("BoatStages")
     if not stages then return nil end
 
@@ -2176,35 +2181,49 @@ local function GetEndCFrame()
     local theEnd = normal:FindFirstChild("TheEnd")
     if not theEnd then return nil end
 
-    return theEnd:GetPivot()
+    -- Prioridade pro Trigger
+    for _,v in ipairs(theEnd:GetDescendants()) do
+        if v:IsA("BasePart") and v.Name:lower():find("trigger") then
+            return v
+        end
+    end
+
+    -- Fallback
+    return theEnd:FindFirstChild("GoldenChest", true)
 end
 
 -- LOOP DO AUTO FARM
 RunService.Heartbeat:Connect(function()
-    if not AutoFarmEnabled or not HRP then return end
-    if moving then return end
+    if not AutoFarmEnabled or moving or not HRP then return end
 
-    local endCF = GetEndCFrame()
-    if not endCF then return end
+    local trigger = GetGoldTrigger()
+    if not trigger then return end
 
     moving = true
-
-    -- ANCORAR (ESSENCIAL)
     HRP.Anchored = true
 
-    -- TELEPORTE SEGURO (PASSA POR TODOS OS MAPAS)
-    for i = 1, 200 do
+    local startPos = HRP.Position
+    local endPos = Vector3.new(
+        trigger.Position.X,
+        SAFE_HEIGHT,
+        trigger.Position.Z
+    )
+
+    for i = 1, STEPS do
         if not AutoFarmEnabled then break end
-        HRP.CFrame = HRP.CFrame:Lerp(endCF * CFrame.new(0, 10, 0), 0.05)
-        task.wait()
+
+        local alpha = i / STEPS
+        local pos = startPos:Lerp(endPos, alpha)
+
+        HRP.CFrame = CFrame.new(pos)
+        task.wait(0.03) -- controla velocidade real
     end
 
-    -- DESANCORA
     HRP.Anchored = false
     moving = false
 end)
 
--- TOGGLE NO SEU ESTILO
+-- TOGGLE (MESMO ESTILO)
 Tab:AddToggle({
     Title = "Auto Farm",
     Description = "Atravessa todos os mapas e pega o tesouro automaticamente",
@@ -2213,12 +2232,10 @@ Tab:AddToggle({
         AutoFarmEnabled = state
 
         if state then
-            Notify("Auto Farm Ativado", "Indo até o final do mapa.")
+            Notify("Auto Farm Ativado", "Movimento seguro iniciado.")
         else
             Notify("Auto Farm Desativado", "Auto Farm desligado.")
-            if HRP then
-                HRP.Anchored = false
-            end
+            if HRP then HRP.Anchored = false end
         end
     end
 })

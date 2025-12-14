@@ -2150,24 +2150,46 @@ Tab:AddButton({
 
 
 --==================================================
--- AUTO LOOT
+-- AUTO LOOT (SOMENTE ESSA FUNÇÃO)
 --==================================================
+
+-- SERVICES
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- TOGGLE
+local AutoLoot = false
+
+-- FUNÇÃO ÚTIL
+local function getHRP(char)
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+-- LOOP AUTO LOOT
 task.spawn(function()
     while task.wait(0.5) do
-        if AutoLoot and Character and getHRP(Character) then
-            for _,item in pairs(workspace.LootDrops:GetChildren()) do
-                if item:IsA("Model") or item:IsA("Part") then
-                    item:PivotTo(getHRP(Character).CFrame)
+        local Character = LocalPlayer.Character
+        local hrp = getHRP(Character)
+
+        if AutoLoot and hrp then
+            local lootFolder = workspace:FindFirstChild("LootDrops")
+            if lootFolder then
+                for _,item in pairs(lootFolder:GetChildren()) do
+                    if item:IsA("Model") or item:IsA("BasePart") then
+                        item:PivotTo(hrp.CFrame)
+                    end
                 end
             end
         end
     end
 end)
 
-
+--==================================================
+-- BOTÃO (REDZ UI)
+--==================================================
 Tab:AddToggle({
     Title = "Auto Loot",
-    Description = "Pega todos os drops",
+    Description = "Puxa todos os drops para você",
     Default = false,
     Callback = function(v)
         AutoLoot = v
@@ -2189,231 +2211,3 @@ Tab:AddToggle({
 
 
 
---==================================================
--- KILL AURA + ESP | SURVIVE BIKINI BOTTOM [BETA]
--- REDZ UI | SEM LOAD | SEM WINDOW | SEM TAB
---==================================================
-
--- SERVICES
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
-local lp = Players.LocalPlayer
-
--- GLOBAL FLAGS
-getgenv().KillAura = false
-getgenv().ESP = false
-
--- CONFIG
-local SAFE_HEIGHT = 9
-local DAMAGE = 6
-local HIT_DELAY = 0.15
-local ESP_DISTANCE = 2500
-
--- CHARACTER
-local function getChar()
-    return lp.Character or lp.CharacterAdded:Wait()
-end
-
---========================================
--- GET ENEMIES (ANTI ERRO)
---========================================
-local function getEnemies()
-    local enemies = {}
-
-    local map = workspace:WaitForChild("Map", 10)
-    if not map then return enemies end
-
-    local enemiesFolder = map:WaitForChild("Enemies", 10)
-    if not enemiesFolder then return enemies end
-
-    local bikini = enemiesFolder:WaitForChild("BikiniBottom", 10)
-    if not bikini then return enemies end
-
-    for _,v in ipairs(bikini:GetDescendants()) do
-        if v:IsA("Model") then
-            local hum = v:FindFirstChildOfClass("Humanoid")
-            local hrp = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Torso")
-            if hum and hrp and hum.Health > 0 then
-                table.insert(enemies, v)
-            end
-        end
-    end
-
-    return enemies
-end
-
---========================================
--- FLY CONTROL
---========================================
-local function enableFly(hrp)
-    if hrp:FindFirstChild("KA_BV") then return end
-
-    local bv = Instance.new("BodyVelocity")
-    bv.Name = "KA_BV"
-    bv.MaxForce = Vector3.new(1e6,1e6,1e6)
-    bv.Velocity = Vector3.zero
-    bv.Parent = hrp
-
-    local bg = Instance.new("BodyGyro")
-    bg.Name = "KA_BG"
-    bg.MaxTorque = Vector3.new(1e6,1e6,1e6)
-    bg.CFrame = hrp.CFrame
-    bg.Parent = hrp
-end
-
-local function disableFly(hrp)
-    if hrp:FindFirstChild("KA_BV") then hrp.KA_BV:Destroy() end
-    if hrp:FindFirstChild("KA_BG") then hrp.KA_BG:Destroy() end
-end
-
---========================================
--- ESP SYSTEM
---========================================
-local ESP_CACHE = {}
-
-local function createESP(enemy)
-    if ESP_CACHE[enemy] then return end
-
-    local hum = enemy:FindFirstChildOfClass("Humanoid")
-    local hrp = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Torso")
-    if not hum or not hrp then return end
-
-    local box = Drawing.new("Square")
-    box.Filled = false
-    box.Thickness = 1
-    box.Transparency = 1
-
-    local name = Drawing.new("Text")
-    name.Center = true
-    name.Outline = true
-    name.Size = 13
-    name.Text = enemy.Name
-
-    local hp = Drawing.new("Text")
-    hp.Center = true
-    hp.Outline = true
-    hp.Size = 12
-
-    ESP_CACHE[enemy] = {
-        Box = box,
-        Name = name,
-        HP = hp,
-        HRP = hrp,
-        Hum = hum
-    }
-end
-
-local function removeESP(enemy)
-    local esp = ESP_CACHE[enemy]
-    if not esp then return end
-
-    esp.Box:Remove()
-    esp.Name:Remove()
-    esp.HP:Remove()
-
-    ESP_CACHE[enemy] = nil
-end
-
---========================================
--- ESP LOOP (SEM continue)
---========================================
-RunService.RenderStepped:Connect(function()
-    if not getgenv().ESP then
-        for _,e in pairs(ESP_CACHE) do
-            e.Box.Visible = false
-            e.Name.Visible = false
-            e.HP.Visible = false
-        end
-        return
-    end
-
-    for enemy,esp in pairs(ESP_CACHE) do
-        if enemy.Parent and esp.Hum and esp.Hum.Health > 0 then
-            local pos, onScreen = Camera:WorldToViewportPoint(esp.HRP.Position)
-            local dist = (Camera.CFrame.Position - esp.HRP.Position).Magnitude
-
-            if onScreen and dist < ESP_DISTANCE then
-                local size = math.clamp(2000 / dist, 25, 120)
-
-                esp.Box.Size = Vector2.new(size / 1.5, size)
-                esp.Box.Position = Vector2.new(
-                    pos.X - esp.Box.Size.X / 2,
-                    pos.Y - esp.Box.Size.Y / 2
-                )
-                esp.Box.Visible = true
-
-                esp.Name.Position = Vector2.new(pos.X, pos.Y - size / 2 - 14)
-                esp.Name.Visible = true
-
-                esp.HP.Text = "HP: " .. math.floor(esp.Hum.Health)
-                esp.HP.Position = Vector2.new(pos.X, pos.Y + size / 2 + 2)
-                esp.HP.Visible = true
-            else
-                esp.Box.Visible = false
-                esp.Name.Visible = false
-                esp.HP.Visible = false
-            end
-        else
-            removeESP(enemy)
-        end
-    end
-end)
-
---========================================
--- MAIN LOOP
---========================================
-task.spawn(function()
-    while true do
-        -- ESP UPDATE
-        for _,enemy in ipairs(getEnemies()) do
-            createESP(enemy)
-        end
-
-        -- KILL AURA
-        if getgenv().KillAura then
-            local char = getChar()
-            local hrp = char:WaitForChild("HumanoidRootPart")
-            enableFly(hrp)
-
-            for _,enemy in ipairs(getEnemies()) do
-                local hum = enemy:FindFirstChildOfClass("Humanoid")
-                local ehrp = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Torso")
-
-                if hum and ehrp and hum.Health > 0 then
-                    while hum.Health > 0 and getgenv().KillAura do
-                        hrp.CFrame = ehrp.CFrame * CFrame.new(0, SAFE_HEIGHT, 0)
-                        hum:TakeDamage(DAMAGE)
-                        task.wait(HIT_DELAY)
-                    end
-                end
-            end
-        else
-            local char = lp.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                disableFly(char.HumanoidRootPart)
-            end
-        end
-
-        task.wait(0.2)
-    end
-end)
-
---========================================
--- BOTÕES (REDZ UI)
---========================================
-Tab:AddToggle({
-    Name = "Kill Aura (Fly)",
-    Default = false,
-    Callback = function(v)
-        getgenv().KillAura = v
-    end
-})
-
-Tab:AddToggle({
-    Name = "ESP Enemies",
-    Default = false,
-    Callback = function(v)
-        getgenv().ESP = v
-    end
-})

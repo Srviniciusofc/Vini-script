@@ -1,50 +1,52 @@
--- Vinibrook INITIAL - Redz V5 + Delta
--- Jogo: Brookhaven 🏡RP
--- Executor: Delta (Mobile)
--- Versão inicial funcional (UI base)
+-- Vinibrook Hub | Redz V5
+-- Brookhaven 🏡RP | Delta Executor (Mobile)
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Carregar Redz Library V5
-local Library = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"
+-- Carregar Redz Library V5 (oficial tlredz)
+local redzlib = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/tlredz/Library/main/redz-V5-remake/main.luau"
 ))()
 
-if not Library then
+if not redzlib then
     warn("Falha ao carregar Redz Library")
     return
 end
 
 -- Criar Janela
-local Window = Library:CreateWindow({
-    Name = "Vinibrook Hub [Inicial]",
+local Window = redzlib:MakeWindow({
+    Title = "Vinibrook Hub",
     SubTitle = "Brookhaven | Delta",
-    SaveConfig = false
+    SaveFolder = "VinibrookHub"
 })
 
--- Aba Principal
-local MainTab = Window:CreateTab("Principal")
+-- =========================
+-- ABA PRINCIPAL
+-- =========================
+local MainTab = Window:MakeTab({"Principal", "home"})
 
-MainTab:CreateButton({
-    Name = "Teste de Execução",
-    Callback = function()
-        print("Vinibrook: Script executando corretamente")
+MainTab:AddButton({
+    "Teste de Execução",
+    function()
+        print("Vinibrook executando corretamente")
         game.StarterGui:SetCore("SendNotification", {
             Title = "Vinibrook",
-            Text = "UI funcionando no Delta ✅",
+            Text = "Redz V5 funcionando no Delta ✅",
             Duration = 3
         })
     end
 })
 
--- Aba Brookhaven
-local BrookTab = Window:CreateTab("Brookhaven")
+-- =========================
+-- ABA BROOKHAVEN
+-- =========================
+local BrookTab = Window:MakeTab({"Brookhaven", "map"})
 
-BrookTab:CreateButton({
-    Name = "Velocidade x2",
-    Callback = function()
+BrookTab:AddButton({
+    "Velocidade x2",
+    function()
         local plr = game.Players.LocalPlayer
         if plr.Character and plr.Character:FindFirstChild("Humanoid") then
             plr.Character.Humanoid.WalkSpeed = 32
@@ -52,9 +54,9 @@ BrookTab:CreateButton({
     end
 })
 
-BrookTab:CreateButton({
-    Name = "Resetar Velocidade",
-    Callback = function()
+BrookTab:AddButton({
+    "Resetar Velocidade",
+    function()
         local plr = game.Players.LocalPlayer
         if plr.Character and plr.Character:FindFirstChild("Humanoid") then
             plr.Character.Humanoid.WalkSpeed = 16
@@ -62,14 +64,16 @@ BrookTab:CreateButton({
     end
 })
 
--- Aba Debug
-local DebugTab = Window:CreateTab("Debug")
+-- =========================
+-- ABA DEBUG
+-- =========================
+local DebugTab = Window:MakeTab({"Debug", "bug"})
 
-DebugTab:CreateButton({
-    Name = "Print Jogador",
-    Callback = function()
+DebugTab:AddButton({
+    "Print Jogador",
+    function()
         print("Jogador:", game.Players.LocalPlayer.Name)
     end
 })
 
-print("Vinibrook inicial carregado com sucesso")
+print("Vinibrook Hub carregado com sucesso")

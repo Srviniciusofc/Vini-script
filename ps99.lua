@@ -1,44 +1,46 @@
--- ===============================
--- LOAD LIBRARY (REDZ V5 REMAKE)
--- ===============================
+-- ======================================================
+-- LOAD LIBRARY (ÚNICO JEITO CORRETO)
+-- ======================================================
 local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"
 ))()
 
--- ===============================
+-- ======================================================
+-- UI (CONFORME README)
+-- ======================================================
+local Window = Library:CreateLib("Pet Simulator 99", "DarkTheme")
+
+local FarmTab = Window:NewTab("Farm")
+local FarmSection = FarmTab:NewSection("Auto Farm")
+
+-- ======================================================
 -- SERVICES
--- ===============================
+-- ======================================================
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local Player = Players.LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Character:WaitForChild("HumanoidRootPart")
 
--- ===============================
--- REMOTES (PADRÃO PET SIM 99)
--- ===============================
+-- ======================================================
+-- REMOTES (PET SIM 99)
+-- ======================================================
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-
 local DamageRemote = Remotes:WaitForChild("Breakables_PlayerDealDamage")
 local JoinPetRemote = Remotes:WaitForChild("Breakables_JoinPetBulk")
 local ClickRemote = Remotes:WaitForChild("Clicker_Click")
 
--- ===============================
+-- ======================================================
 -- FLAGS
--- ===============================
+-- ======================================================
 local AutoDiamonds = false
 local AutoArea = false
 local AutoClick = false
 
--- ===============================
--- FUNÇÕES ÚTEIS
--- ===============================
-local function MoveTo(cf)
-    HRP.CFrame = cf + Vector3.new(0, 3, 0)
-end
-
+-- ======================================================
+-- FUNÇÕES
+-- ======================================================
 local function GetCurrentArea()
     local map = workspace:FindFirstChild("__MAP")
     if not map then return nil end
@@ -46,7 +48,7 @@ local function GetCurrentArea()
     local areas = map:FindFirstChild("Areas")
     if not areas then return nil end
 
-    for _, area in ipairs(areas:GetChildren()) do
+    for _, area in pairs(areas:GetChildren()) do
         local zone = area:FindFirstChild("Zone")
         if zone then
             if (HRP.Position - zone.Position).Magnitude < 60 then
@@ -58,28 +60,13 @@ local function GetCurrentArea()
     return nil
 end
 
-local function GetAreaCFrame(areaName)
-    local map = workspace:FindFirstChild("__MAP")
-    if not map then return nil end
-
-    local areas = map:FindFirstChild("Areas")
-    if not areas then return nil end
-
-    local area = areas:FindFirstChild(areaName)
-    if area and area:FindFirstChild("Zone") then
-        return area.Zone.CFrame
-    end
-
-    return nil
-end
-
--- ===============================
--- AUTO CLICK (INSANO)
--- ===============================
+-- ======================================================
+-- AUTO CLICK (SEPARADO)
+-- ======================================================
 task.spawn(function()
     while true do
         if AutoClick then
-            for i = 1, 100 do
+            for i = 1, 50 do
                 pcall(function()
                     ClickRemote:FireServer()
                 end)
@@ -89,30 +76,27 @@ task.spawn(function()
     end
 end)
 
--- ===============================
+-- ======================================================
 -- AUTO FARM DIAMANTES
--- ===============================
+-- ======================================================
 task.spawn(function()
     while true do
         if AutoDiamonds then
             local areaName = GetCurrentArea()
-
             if areaName then
                 local things = workspace:FindFirstChild("__THINGS")
                 if things then
                     local breakables = things:FindFirstChild("Breakables")
                     if breakables then
-                        local areaFolder = breakables:FindFirstChild(areaName)
-                        if areaFolder then
-                            for _, obj in ipairs(areaFolder:GetChildren()) do
+                        local folder = breakables:FindFirstChild(areaName)
+                        if folder then
+                            for _, obj in pairs(folder:GetChildren()) do
                                 if not AutoDiamonds then break end
-
                                 pcall(function()
                                     DamageRemote:FireServer(obj.Name)
                                     JoinPetRemote:FireServer({obj.Name})
                                 end)
-
-                                task.wait(0.1)
+                                task.wait(0.15)
                             end
                         end
                     end
@@ -123,17 +107,17 @@ task.spawn(function()
     end
 end)
 
--- ===============================
--- AUTO FARM ÁREA
--- ===============================
+-- ======================================================
+-- AUTO FARM ÁREA (ANTI-FICAR PARADO)
+-- ======================================================
 task.spawn(function()
     while true do
         if AutoArea then
             local areaName = GetCurrentArea()
             if areaName then
-                local cf = GetAreaCFrame(areaName)
-                if cf then
-                    MoveTo(cf)
+                local area = workspace.__MAP.Areas:FindFirstChild(areaName)
+                if area and area:FindFirstChild("Zone") then
+                    HRP.CFrame = area.Zone.CFrame + Vector3.new(0, 3, 0)
                 end
             end
         end
@@ -141,40 +125,17 @@ task.spawn(function()
     end
 end)
 
--- ===============================
--- UI (REDZ)
--- ===============================
-local Window = Library:MakeWindow({
-    Title = "Pet Simulator 99",
-    SubTitle = "Auto Farm | Redz V5",
-    SaveFolder = "PetSim99"
-})
+-- ======================================================
+-- TOGGLES (EXATAMENTE DO README)
+-- ======================================================
+FarmSection:NewToggle("Auto Farm Diamantes", "Quebra e coleta", function(state)
+    AutoDiamonds = state
+end)
 
-local FarmTab = Window:MakeTab({
-    Name = "Farm",
-    Icon = "rbxassetid://7734053495"
-})
+FarmSection:NewToggle("Auto Farm Área", "Não fica parado", function(state)
+    AutoArea = state
+end)
 
-FarmTab:AddToggle({
-    Name = "Auto Farm Diamantes",
-    Default = false,
-    Callback = function(state)
-        AutoDiamonds = state
-    end
-})
-
-FarmTab:AddToggle({
-    Name = "Auto Farm Área",
-    Default = false,
-    Callback = function(state)
-        AutoArea = state
-    end
-})
-
-FarmTab:AddToggle({
-    Name = "Auto Click (Insano)",
-    Default = false,
-    Callback = function(state)
-        AutoClick = state
-    end
-})
+FarmSection:NewToggle("Auto Click", "Click rápido", function(state)
+    AutoClick = state
+end)

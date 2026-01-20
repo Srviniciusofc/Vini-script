@@ -1,16 +1,22 @@
+--------------------------------------------------
 -- LIBRARY
+--------------------------------------------------
 local Library = loadstring(game:HttpGet(
   "https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"
 ))()
 
+--------------------------------------------------
 -- WINDOW
+--------------------------------------------------
 local Window = Library:MakeWindow({
   Title = "Vini Hub🥶🥶",
   SubTitle = "Dev by SrVinicius",
   ScriptFolder = "redz-library-V5"
 })
 
+--------------------------------------------------
 -- MINIMIZER
+--------------------------------------------------
 local Minimizer = Window:NewMinimizer({
   KeyCode = Enum.KeyCode.LeftControl
 })
@@ -21,129 +27,183 @@ Minimizer:CreateMobileMinimizer({
 })
 
 --------------------------------------------------
--- TABS (COM ÍCONES DO UTILS)
+-- TABS (ÍCONES DO UTILS)
 --------------------------------------------------
+local Tab = Window:MakeTab({ Title = "Main", Icon = "diamond" })
+local Tab2 = Window:MakeTab({ Title = "Config", Icon = "settings" })
+local Tab3 = Window:MakeTab({ Title = "Cuidado", Icon = "alert-triangle" })
 
--- MAIN
-local Tab = Window:MakeTab({
-  Title = "Main",
-  Icon = "diamond"
-})
-
--- CONFIG
-local Tab2 = Window:MakeTab({
-  Title = "Config",
-  Icon = "settings"
-})
-
--- CUIDADO
-local Tab3 = Window:MakeTab({
-  Title = "Cuidado",
-  Icon = "alert-triangle"
-})
-
---------------------------------------------------
--- SECTION (DO JEITO QUE VOCÊ USA)
---------------------------------------------------
 Tab:AddSection("Início")
 
 --------------------------------------------------
--- VARIÁVEIS
+-- SERVICES
+--------------------------------------------------
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+--------------------------------------------------
+-- ESTADOS
 --------------------------------------------------
 local AutoDiamonds = false
 local AutoArea = false
 local AutoClick = false
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+--------------------------------------------------
+-- NOTIFY
+--------------------------------------------------
+local function Notify(msg)
+  Window:Notify({
+    Title = "Vini Hub",
+    Content = msg,
+    Duration = 3
+  })
+end
 
 --------------------------------------------------
--- FUNÇÕES
+-- REMOTES (COLETA SEGURA)
 --------------------------------------------------
+local Remotes = {}
 
-local function StartAutoDiamonds()
-  task.spawn(function()
-    while AutoDiamonds do
-      local char = LocalPlayer.Character
-      if char and char:FindFirstChild("HumanoidRootPart") then
-        -- mantém ativo / farm passivo
-        char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+for _,v in ipairs(ReplicatedStorage:GetDescendants()) do
+  if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+    Remotes[v.Name] = v
+  end
+end
+
+--------------------------------------------------
+-- FIRE (SEM VARARGS)
+--------------------------------------------------
+local function Fire(remoteName, argsTable)
+  local remote = Remotes[remoteName]
+  if not remote then return end
+
+  pcall(function()
+    if remote:IsA("RemoteEvent") then
+      remote:FireServer(argsTable)
+    else
+      remote:InvokeServer(argsTable)
+    end
+  end)
+end
+
+--------------------------------------------------
+-- BREAKABLES (AREA ATUAL)
+--------------------------------------------------
+local function GetBreakables()
+  local list = {}
+
+  for _,v in ipairs(workspace:GetDescendants()) do
+    if v.Name == "Breakables" then
+      for _,b in ipairs(v:GetChildren()) do
+        table.insert(list, b)
       end
-      task.wait(0.2)
     end
-  end)
+  end
+
+  return list
 end
 
-local function StartAutoArea()
-  task.spawn(function()
-    while AutoArea do
-      local char = LocalPlayer.Character
-      if char and char:FindFirstChild("Humanoid") then
-        -- evita ficar parado
-        char.Humanoid:Move(Vector3.new(0, 0, -1), true)
+local function GetHighestHPBreakable()
+  local best = nil
+  local highest = 0
+
+  local breakables = GetBreakables()
+  for i = 1, #breakables do
+    local b = breakables[i]
+    local hp = b:FindFirstChild("Health") or b:FindFirstChild("HP")
+
+    if hp and hp.Value > highest then
+      highest = hp.Value
+      best = b
+    end
+  end
+
+  return best
+end
+
+--------------------------------------------------
+-- AUTO CLICK REAL (PETS)
+--------------------------------------------------
+task.spawn(function()
+  while true do
+    if AutoClick then
+      local target = GetHighestHPBreakable()
+      if target then
+        Fire("Breakable_Attack", { target })
+        Fire("Pets_Attack", { target })
+        Fire("AttackBreakable", { target })
       end
-      task.wait(0.5)
     end
-  end)
-end
-
-local function StartAutoClick()
-  task.spawn(function()
-    while AutoClick do
-      -- click insano
-      pcall(function()
-        mouse1click()
-      end)
-      task.wait()
-    end
-  end)
-end
+    task.wait(0.05)
+  end
+end)
 
 --------------------------------------------------
--- BOTÕES (EXATAMENTE COMO SEU EXEMPLO)
+-- AUTO FARM DIAMANTE
 --------------------------------------------------
+task.spawn(function()
+  while true do
+    if AutoDiamonds then
+      local target = GetHighestHPBreakable()
+      if target then
+        Fire("Breakable_Attack", { target })
+        Fire("CollectOrbs", {})
+      end
+    end
+    task.wait(0.1)
+  end
+end)
 
+--------------------------------------------------
+-- AUTO AREA (COMPRA PRÓXIMA)
+--------------------------------------------------
+task.spawn(function()
+  while true do
+    if AutoArea then
+      Fire("BuyNextArea", {})
+      Fire("Areas_BuyNext", {})
+    end
+    task.wait(1)
+  end
+end)
+
+--------------------------------------------------
+-- BOTÕES (SEU PADRÃO)
+--------------------------------------------------
 Tab:AddButton({
-  Name = "Auto Farm Diamante",
+  Name = "Auto Farm Diamante (REAL)",
   Debounce = 0.3,
   Callback = function()
     AutoDiamonds = not AutoDiamonds
-    if AutoDiamonds then
-      StartAutoDiamonds()
-    end
+    Notify("Auto Farm Diamante: " .. (AutoDiamonds and "ATIVADO" or "DESATIVADO"))
   end
 })
 
 Tab:AddButton({
-  Name = "Auto Farm Área",
+  Name = "Auto Farm Área (REAL)",
   Debounce = 0.3,
   Callback = function()
     AutoArea = not AutoArea
-    if AutoArea then
-      StartAutoArea()
-    end
+    Notify("Auto Farm Área: " .. (AutoArea and "ATIVADO" or "DESATIVADO"))
   end
 })
 
 Tab:AddButton({
-  Name = "Auto Click INSANO",
-  Debounce = 0.1,
+  Name = "Auto Click Pets (REAL)",
+  Debounce = 0.3,
   Callback = function()
     AutoClick = not AutoClick
-    if AutoClick then
-      StartAutoClick()
-    end
+    Notify("Auto Click: " .. (AutoClick and "ATIVADO" or "DESATIVADO"))
   end
 })
 
 --------------------------------------------------
 -- AVISO
 --------------------------------------------------
-
 Tab3:AddButton({
   Name = "Aviso",
-  Debounce = 0.5,
   Callback = function()
-    warn("Use por sua conta e risco 😈")
+    Notify("PS99 muda remotes com updates. Ajuste se necessário.")
   end
 })

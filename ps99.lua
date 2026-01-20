@@ -1,17 +1,40 @@
 -- ======================================================
--- LOAD LIBRARY (ÚNICO JEITO CORRETO)
+-- LOAD LIBRARY (MESMA DO SEU SCRIPT)
 -- ======================================================
 local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"
 ))()
 
 -- ======================================================
--- UI (CONFORME README)
+-- WINDOW
 -- ======================================================
-local Window = Library:CreateLib("Pet Simulator 99", "DarkTheme")
+local Window = Library:MakeWindow({
+    Title = "Vini Hub 🥶🥶",
+    SubTitle = "Pet Simulator 99",
+    ScriptFolder = "ViniHub-PS99"
+})
 
-local FarmTab = Window:NewTab("Farm")
-local FarmSection = FarmTab:NewSection("Auto Farm")
+-- ======================================================
+-- MINIMIZER (IGUAL AO SEU)
+-- ======================================================
+local Minimizer = Window:NewMinimizer({
+    KeyCode = Enum.KeyCode.LeftControl
+})
+
+Minimizer:CreateMobileMinimizer({
+    Image = "rbxassetid://121080450554891",
+    BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+})
+
+-- ======================================================
+-- TAB / SECTION
+-- ======================================================
+local FarmTab = Window:MakeTab({
+    Title = "Farm",
+    Icon = "Home"
+})
+
+local FarmSection = FarmTab:AddSection("Auto Farm")
 
 -- ======================================================
 -- SERVICES
@@ -61,12 +84,12 @@ local function GetCurrentArea()
 end
 
 -- ======================================================
--- AUTO CLICK (SEPARADO)
+-- AUTO CLICK
 -- ======================================================
 task.spawn(function()
     while true do
         if AutoClick then
-            for i = 1, 50 do
+            for i = 1, 40 do
                 pcall(function()
                     ClickRemote:FireServer()
                 end)
@@ -108,7 +131,7 @@ task.spawn(function()
 end)
 
 -- ======================================================
--- AUTO FARM ÁREA (ANTI-FICAR PARADO)
+-- AUTO FARM ÁREA (ANTI-PARADO)
 -- ======================================================
 task.spawn(function()
     while true do
@@ -126,16 +149,28 @@ task.spawn(function()
 end)
 
 -- ======================================================
--- TOGGLES (EXATAMENTE DO README)
+-- TOGGLES (MESMO PADRÃO DO SEU SCRIPT)
 -- ======================================================
-FarmSection:NewToggle("Auto Farm Diamantes", "Quebra e coleta", function(state)
-    AutoDiamonds = state
-end)
+FarmSection:AddToggle({
+    Name = "Auto Farm Diamantes",
+    Default = false,
+    Callback = function(state)
+        AutoDiamonds = state
+    end
+})
 
-FarmSection:NewToggle("Auto Farm Área", "Não fica parado", function(state)
-    AutoArea = state
-end)
+FarmSection:AddToggle({
+    Name = "Auto Farm Área",
+    Default = false,
+    Callback = function(state)
+        AutoArea = state
+    end
+})
 
-FarmSection:NewToggle("Auto Click", "Click rápido", function(state)
-    AutoClick = state
-end)
+FarmSection:AddToggle({
+    Name = "Auto Click",
+    Default = false,
+    Callback = function(state)
+        AutoClick = state
+    end
+})

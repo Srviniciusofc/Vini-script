@@ -66,6 +66,7 @@ local InicionSection = Tab1:AddSection("Início")
 
 
 
+local InicionSection = Tab2:AddSection("Início")
 
 
 

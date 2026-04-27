@@ -1294,7 +1294,7 @@ end
 
 
 
---ESPECTAR
+--// ESPECTAR PLAYER (VERSÃO ESTÁVEL)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -1302,19 +1302,23 @@ local Camera = workspace.CurrentCamera
 
 local selectedPlayer = nil
 local spectating = false
+local spectateConnection = nil
 
--- FUNÇÃO: Atualizar lista de players
+--// FUNÇÃO: Atualizar lista de players (SEM BUG)
 local function UpdatePlayerList()
     local list = {}
+
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
+        if plr ~= LocalPlayer and plr.Parent == Players then
             table.insert(list, plr.Name)
         end
     end
+
+    table.sort(list) -- deixa organizado
     return list
 end
 
--- DROPDOWN DE PLAYERS
+--// DROPDOWN
 local PlayerDropdown = Tab:AddDropdown({
     Name = "Lista de Jogadores",
     Options = UpdatePlayerList(),
@@ -1323,27 +1327,60 @@ local PlayerDropdown = Tab:AddDropdown({
     end
 })
 
--- BOTÃO: Atualizar lista
+--// BOTÃO: Atualizar lista manual
 Tab:AddButton({
     Name = "Atualizar Lista",
     Callback = function()
-        local novaLista = UpdatePlayerList()
-        PlayerDropdown:Refresh(novaLista)
+        PlayerDropdown:Refresh(UpdatePlayerList())
     end
 })
 
--- FUNÇÃO: Começar a espectar
-local function StartSpectate()
-    if not selectedPlayer then return end
-    local target = Players:FindFirstChild(selectedPlayer)
-    if not target or not target.Character then return end
-    local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
-    spectating = true
-    Camera.CameraSubject = humanoid
+--// FUNÇÃO: pegar humanoid com segurança
+local function GetHumanoid(player)
+    if not player then return nil end
+    
+    local character = player.Character or player.CharacterAdded:Wait()
+    if not character then return nil end
+    
+    return character:WaitForChild("Humanoid", 5)
 end
 
--- BOTÃO: Spectar Player
+--// FUNÇÃO: Começar a espectar
+local function StartSpectate()
+    if not selectedPlayer then return end
+
+    local target = Players:FindFirstChild(selectedPlayer)
+
+    -- evita bug com player que saiu
+    if not target or target.Parent ~= Players then
+        PlayerDropdown:Refresh(UpdatePlayerList())
+        selectedPlayer = nil
+        return
+    end
+
+    local humanoid = GetHumanoid(target)
+    if not humanoid then return end
+
+    spectating = true
+
+    -- força câmera padrão (funciona em mais jogos)
+    Camera.CameraType = Enum.CameraType.Custom
+    Camera.CameraSubject = humanoid
+
+    -- reconectar ao respawn
+    if spectateConnection then
+        spectateConnection:Disconnect()
+    end
+
+    spectateConnection = target.CharacterAdded:Connect(function(char)
+        local newHumanoid = char:WaitForChild("Humanoid", 5)
+        if spectating and newHumanoid then
+            Camera.CameraSubject = newHumanoid
+        end
+    end)
+end
+
+--// BOTÃO: Spectar
 Tab:AddButton({
     Name = "Spectar Player",
     Callback = function()
@@ -1351,16 +1388,22 @@ Tab:AddButton({
     end
 })
 
--- FUNÇÃO: Parar de espectar
+--// FUNÇÃO: Parar de espectar
 local function StopSpectate()
     spectating = false
-    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+    if spectateConnection then
+        spectateConnection:Disconnect()
+        spectateConnection = nil
+    end
+
+    local humanoid = GetHumanoid(LocalPlayer)
     if humanoid then
         Camera.CameraSubject = humanoid
     end
 end
 
--- BOTÃO: Parar de Spectar
+--// BOTÃO: Parar
 Tab:AddButton({
     Name = "Parar de Spectar",
     Callback = function()
@@ -1368,7 +1411,7 @@ Tab:AddButton({
     end
 })
 
--- Atualizar lista automaticamente quando players entram/saem
+--// Atualizar lista automaticamente (entrar/sair)
 Players.PlayerAdded:Connect(function()
     PlayerDropdown:Refresh(UpdatePlayerList())
 end)
@@ -1377,6 +1420,13 @@ Players.PlayerRemoving:Connect(function()
     PlayerDropdown:Refresh(UpdatePlayerList())
 end)
 
+--// AUTO-UPDATE (ANTI BUG DE DROPDOWN)
+task.spawn(function()
+    while true do
+        task.wait(5)
+        PlayerDropdown:Refresh(UpdatePlayerList())
+    end
+end) 
 
 
 
@@ -1496,14 +1546,12 @@ Tab:AddToggle({
 
 
 
-
-
--- Botão (exemplo)
 Tab3:AddButton({
     Name = "PUXAR TUDO DO MAPA",
     Debounce = 0.5,
     Callback = function()
         PUXARALL()
+        print("visual")
     end
 })
 
@@ -1642,570 +1690,17 @@ end
 
 
 
---Bring foods
 
-Tab:AddButton({
-    Name = "Trazer comida",
-    Debounce = 0.5,
-    Callback = function(btn) -- btn pode ser nil dependendo da lib
-        -- função segura pra setar texto do botão (se existir)
-        local function safeSetText(t)
-            if typeof(btn) == "table" and typeof(btn.Text) == "string" then
-                pcall(function() btn.Text = t end)
-            end
-        end
 
-        safeSetText("Working...")
-        local count = 0
 
-        local items = {
-            "ChocolateBar",
-            "CannedBread",
-            "KelpShake",
-            "Acorn",
-            "JellyPatty",
-            "BlueJellyPatty",
-            "KrabbyPatty"
-        }
 
-        -- checa LootDrops
-        local root = workspace:FindFirstChild("LootDrops")
-        if not root then
-            warn("[Bring Food] workspace.LootDrops nao encontrado")
-            safeSetText("No LootDrops")
-            task.wait(1.5)
-            safeSetText("Bring Food")
-            return
-        end
 
-        -- função que traz um BasePart até o player (1 vez)
-        local function bringPart(part)
-            if not part or not part:IsA("BasePart") then return false end
-            local player = game:GetService("Players").LocalPlayer
-            if not player then return false end
-            local char = player.Character or player.CharacterAdded:Wait()
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return false end
 
-            -- tentativa segura
-            local ok, err = pcall(function()
-                -- física estável: mantemos CanCollide = true pra evitar atravessar chão
-                part.Anchored = false
-                part.CanCollide = true
-                -- posição segura: um pouco à frente do player
-                local destino = hrp.CFrame * CFrame.new(0, -2, -4)
-                part:PivotTo(destino)
-            end)
 
-            if not ok then
-                warn("[Bring Food] falha ao trazer:", part, err)
-            end
-            return ok
-        end
 
-        -- varrer LootDrops
-        for _, v in ipairs(root:GetDescendants()) do
-            if v and v:IsA("BasePart") and table.find(items, v.Name) then
-                if pcall(function() return bringPart(v) end) then
-                    count = count + 1
-                    task.wait(0.06) -- pequeno delay pra não estourar física
-                end
-            end
-        end
 
-        if count > 0 then
-            safeSetText("Brought "..count.."!")
-        else
-            safeSetText("No Food")
-        end
 
-        task.wait(1.6)
-        safeSetText("Bring Food")
-    end
-})
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---BRING GELEIAS 
-
-
-
-
-Tab:AddButton({
-    Name = "Trazer geleias",
-    Debounce = 0.5,
-    Callback = function(_btn) -- ignoramos _btn, pois sua lib não suporta set de texto
-        local Players = game:GetService("Players")
-        local plr = Players.LocalPlayer
-        if not plr then
-            warn("[Bring Jelly] LocalPlayer não encontrado")
-            return
-        end
-
-        local root = workspace:FindFirstChild("LootDrops")
-        if not root then
-            warn("[Bring Jelly] workspace.LootDrops não encontrado")
-            return
-        end
-
-        -- função de bring segura
-        local function bring(part)
-            if not part or not part:IsA("BasePart") then return false end
-            local char = plr.Character or plr.CharacterAdded:Wait()
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return false end
-
-            local ok, err = pcall(function()
-                part.Anchored = false
-                part.CanCollide = true
-                local dest = hrp.CFrame * CFrame.new(0, -2, -4)
-                part:PivotTo(dest)
-            end)
-
-            if not ok then
-                warn("[Bring Jelly] falha ao trazer:", part, err)
-            end
-            return ok
-        end
-
-        -- varre e traz itens com "Jelly" no nome
-        local count = 0
-        for _, v in ipairs(root:GetDescendants()) do
-            if v and v:IsA("BasePart") and tostring(v.Name):find("Jelly") then
-                pcall(function() -- proteger cada tentativa
-                    if bring(v) then
-                        count = count + 1
-                    end
-                end)
-                task.wait(0.06)
-            end
-        end
-
-        if count > 0 then
-            warn("[Bring Jelly] Trouxe "..count.." geleia(s).")
-        else
-            warn("[Bring Jelly] Sem geleia encontrada.")
-        end
-    end
-})
-
-
-
-
-
-
-
-
-
-
---Bring Scrap
-
-
-
-
-
-
-
-Tab:AddButton({
-    Name = "Trazer Scrap",
-    Debounce = 0.5,
-    Callback = (function()
-        local busy = false -- debounce local pra garantir que não execute duas vezes junto
-
-        return function(btn) -- btn existe, mas não mexemos em btn.Text
-            if busy then
-                warn("[Bring Scrap] Ação já em execução.")
-                return
-            end
-            busy = true
-
-            local Players = game:GetService("Players")
-            local plr = Players.LocalPlayer
-            if not plr then
-                warn("[Bring Scrap] LocalPlayer não encontrado.")
-                busy = false
-                return
-            end
-
-            local root = workspace:FindFirstChild("LootDrops")
-            if not root then
-                warn("[Bring Scrap] workspace.LootDrops não encontrado.")
-                busy = false
-                return
-            end
-
-            local scrapList = {
-                "ToxicBarrel","BrokenMotorcycle","CyclopsHelmet","RubberTire","Muffler","OpenCan",
-                "ScrapMetal","ScrapPile","MetalPlate","EngineBlock","WornGear","RustyPipe","OldWires"
-            }
-            local function isScrapName(name)
-                for _, s in ipairs(scrapList) do
-                    if s == name then return true end
-                end
-                return false
-            end
-
-            -- retorna o primeiro BasePart válido dentro de um objeto (self/internals)
-            local function findPartInObject(obj)
-                if not obj then return nil end
-                if obj:IsA("BasePart") then return obj end
-                if obj:IsA("Model") then
-                    if obj.PrimaryPart and obj.PrimaryPart:IsA("BasePart") then
-                        return obj.PrimaryPart
-                    end
-                    for _, d in ipairs(obj:GetDescendants()) do
-                        if d:IsA("BasePart") then return d end
-                    end
-                else
-                    for _, d in ipairs(obj:GetDescendants()) do
-                        if d:IsA("BasePart") then return d end
-                    end
-                end
-                return nil
-            end
-
-            local function bringPart(part, hrp)
-                if not part or not part:IsA("BasePart") then return false, "not a basepart" end
-                local ok, err = pcall(function()
-                    -- tentativa segura: anchor temporariamente e move
-                    part.Anchored = true
-                    part:PivotTo(hrp.CFrame * CFrame.new(0, -2, -4))
-                    -- opcional: manter ancorado por 0.05s pra estabilidade e soltar depois
-                    task.delay(0.06, function()
-                        pcall(function() part.Anchored = false end)
-                    end)
-                end)
-                return ok, err
-            end
-
-            local function bringModel(model, hrp)
-                if not model or not model:IsA("Model") then return false, "not a model" end
-                -- se tem PrimaryPart, usa SetPrimaryPartCFrame
-                if model.PrimaryPart then
-                    local ok, err = pcall(function()
-                        model:SetPrimaryPartCFrame(hrp.CFrame * CFrame.new(0, -2, -4))
-                    end)
-                    return ok, err
-                else
-                    -- fallback: pega qualquer BasePart dentro do model e move
-                    local p = findPartInObject(model)
-                    if p then
-                        return bringPart(p, hrp)
-                    end
-                    return false, "nenhum basepart no model"
-                end
-            end
-
-            local count = 0
-            local plrChar = plr.Character
-            if not plrChar then
-                -- tenta esperar um pouco se a char não existir
-                plrChar = plr.CharacterAdded and plr.CharacterAdded:Wait()
-            end
-
-            local hrp = plrChar and plrChar:FindFirstChild("HumanoidRootPart")
-            if not hrp then
-                warn("[Bring Scrap] HumanoidRootPart não encontrado no personagem.")
-                busy = false
-                return
-            end
-
-            -- iterar pelos filhos diretos e descendants caso seja necessário
-            local candidates = {}
-            for _, v in ipairs(root:GetDescendants()) do
-                -- consideramos Models ou BaseParts: verificamos nomes no próprio objeto e nos descendentes
-                local nameMatch = false
-                if v.Name and isScrapName(v.Name) then
-                    nameMatch = true
-                else
-                    -- se for model, checar nome dos descendentes também
-                    for _, d in ipairs(v:GetDescendants()) do
-                        if d.Name and isScrapName(d.Name) then
-                            nameMatch = true
-                            break
-                        end
-                    end
-                end
-                if nameMatch then
-                    table.insert(candidates, v)
-                end
-            end
-
-            if #candidates == 0 then
-                warn("[Bring Scrap] Nenhum item da scrapList encontrado em LootDrops.")
-                busy = false
-                return
-            end
-
-            for _, item in ipairs(candidates) do
-                -- pra cada candidato, tentamos mover de forma apropriada
-                local success, why = false, nil
-                if item:IsA("Model") then
-                    success, why = bringModel(item, hrp)
-                else
-                    -- pode ser um part profundo: pegar o BasePart real
-                    local part = item:IsA("BasePart") and item or findPartInObject(item)
-                    if part then
-                        success, why = bringPart(part, hrp)
-                    else
-                        success, why = false, "nenhum BasePart encontrado"
-                    end
-                end
-
-                if success then
-                    count = count + 1
-                else
-                    warn(("[Bring Scrap] Falha ao trazer '%s' : %s"):format(tostring(item:GetFullName()), tostring(why)))
-                end
-
-                task.wait(0.06) -- delay pra estabilidade física
-            end
-
-            if count > 0 then
-                warn("[Bring Scrap] Trouxe "..count.." item(s) da lista.")
-            else
-                warn("[Bring Scrap] Nenhum item movido com sucesso.")
-            end
-
-            busy = false
-        end
-    end)()
-})
-
-
-
-
-
-
-
-
---Bring bandagem
-
-
-
-
-
-Tab:AddButton({
-    Name = "Trazer Bandagens",
-    Debounce = 0.5,
-    Callback = (function()
-
-        local busy = false
-
-        return function(btn)
-            if busy then
-                warn("[Bring Bandages] Ação já em execução.")
-                return
-            end
-            busy = true
-
-            local Players = game:GetService("Players")
-            local plr = Players.LocalPlayer
-            if not plr then
-                warn("[Bring Bandages] LocalPlayer não encontrado.")
-                busy = false
-                return
-            end
-
-            local root = workspace:FindFirstChild("LootDrops")
-            if not root then
-                warn("[Bring Bandages] workspace.LootDrops não encontrado.")
-                busy = false
-                return
-            end
-
-            -- Lista válida
-            local bandageList = {
-                ["Bandage"] = true,
-                ["BandagePack"] = true
-            }
-
-            local function findBasePart(obj)
-                if not obj then return nil end
-                if obj:IsA("BasePart") then return obj end
-                if obj:IsA("Model") then
-                    if obj.PrimaryPart and obj.PrimaryPart:IsA("BasePart") then
-                        return obj.PrimaryPart
-                    end
-                    for _, d in ipairs(obj:GetDescendants()) do
-                        if d:IsA("BasePart") then return d end
-                    end
-                else
-                    for _, d in ipairs(obj:GetDescendants()) do
-                        if d:IsA("BasePart") then return d end
-                    end
-                end
-                return nil
-            end
-
-            local function bringPart(part, hrp)
-                local ok, err = pcall(function()
-                    part.Anchored = true
-                    part:PivotTo(hrp.CFrame * CFrame.new(0, -2, -4))
-                    task.delay(0.06, function()
-                        pcall(function() part.Anchored = false end)
-                    end)
-                end)
-                return ok, err
-            end
-
-            local function bringModel(model, hrp)
-                if model.PrimaryPart then
-                    local ok, err = pcall(function()
-                        model:SetPrimaryPartCFrame(hrp.CFrame * CFrame.new(0, -2, -4))
-                    end)
-                    return ok, err
-                else
-                    local p = findBasePart(model)
-                    if p then
-                        return bringPart(p, hrp)
-                    end
-                end
-                return false, "nenhum BasePart"
-            end
-
-            local char = plr.Character or plr.CharacterAdded:Wait()
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then
-                warn("[Bring Bandages] HRP não encontrado.")
-                busy = false
-                return
-            end
-
-            local candidates = {}
-            for _, v in ipairs(root:GetDescendants()) do
-                if bandageList[v.Name] then
-                    table.insert(candidates, v)
-                end
-            end
-
-            if #candidates == 0 then
-                warn("[Bring Bandages] Nenhuma Bandage encontrada.")
-                busy = false
-                return
-            end
-
-            local count = 0
-
-            for _, item in ipairs(candidates) do
-                local ok
-                if item:IsA("Model") then
-                    ok = select(1, bringModel(item, hrp))
-                else
-                    local part = item:IsA("BasePart") and item or findBasePart(item)
-                    if part then
-                        ok = select(1, bringPart(part, hrp))
-                    end
-                end
-
-                if ok then
-                    -- <-- correção: atribuição em Lua
-                    count = count + 1
-                end
-
-                task.wait(0.06)
-            end
-
-            warn("[Bring Bandages] Trouxe "..count.." bandagem(ns).")
-            busy = false
-        end
-
-    end)()
-})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---Auto Loot
-
-
-
-
---==================================================
--- AUTO LOOT (SOMENTE ESSA FUNÇÃO)
---==================================================
-
--- SERVICES
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- TOGGLE
-local AutoLoot = false
-
--- FUNÇÃO ÚTIL
-local function getHRP(char)
-    return char and char:FindFirstChild("HumanoidRootPart")
-end
-
--- LOOP AUTO LOOT
-task.spawn(function()
-    while task.wait(0.5) do
-        local Character = LocalPlayer.Character
-        local hrp = getHRP(Character)
-
-        if AutoLoot and hrp then
-            local lootFolder = workspace:FindFirstChild("LootDrops")
-            if lootFolder then
-                for _,item in pairs(lootFolder:GetChildren()) do
-                    if item:IsA("Model") or item:IsA("BasePart") then
-                        item:PivotTo(hrp.CFrame)
-                    end
-                end
-            end
-        end
-    end
-end)
-
---==================================================
--- BOTÃO (REDZ UI)
---==================================================
-Tab:AddToggle({
-    Title = "Auto Loot",
-    Description = "Puxa todos os drops para você",
-    Default = false,
-    Callback = function(v)
-        AutoLoot = v
-    end
-})
-
-
-
-
-
-
-
-
-
-
---teste
 
 
 

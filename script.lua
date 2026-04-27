@@ -2366,3 +2366,99 @@ end
 
 
 
+--// AIM ASSIST
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local AIM_ENABLED = false
+local FOV = 120
+local SMOOTHNESS = 0.15
+
+-- círculo FOV
+local circle = Drawing.new("Circle")
+circle.Thickness = 2
+circle.NumSides = 100
+circle.Radius = FOV
+circle.Filled = false
+circle.Visible = false
+
+-- pegar player mais próximo da mira
+local function GetClosestPlayer()
+    local closest = nil
+    local shortestDistance = FOV
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local head = player.Character:FindFirstChild("Head")
+            if head then
+                local pos, visible = Camera:WorldToViewportPoint(head.Position)
+
+                if visible then
+                    local distance = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+
+                    if distance < shortestDistance then
+                        shortestDistance = distance
+                        closest = player
+                    end
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+-- loop
+RunService.RenderStepped:Connect(function()
+    circle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    circle.Radius = FOV
+    circle.Visible = AIM_ENABLED
+
+    if not AIM_ENABLED then return end
+
+    local target = GetClosestPlayer()
+
+    if target and target.Character then
+        local head = target.Character:FindFirstChild("Head")
+        if head then
+            local currentCFrame = Camera.CFrame
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
+
+            Camera.CFrame = currentCFrame:Lerp(targetCFrame, SMOOTHNESS)
+        end
+    end
+end)
+
+-- BOTÃO
+Tab:AddButton({
+    Name = "Aim Assist ON/OFF",
+    Callback = function()
+        AIM_ENABLED = not AIM_ENABLED
+    end
+})
+
+-- SLIDER FOV
+Tab:AddSlider({
+    Name = "FOV Aim",
+    Min = 50,
+    Max = 300,
+    Default = 120,
+    Callback = function(value)
+        FOV = value
+    end
+})
+
+-- SLIDER SMOOTH
+Tab:AddSlider({
+    Name = "Suavidade",
+    Min = 1,
+    Max = 100,
+    Default = 15,
+    Callback = function(value)
+        SMOOTHNESS = value / 100
+    end
+})

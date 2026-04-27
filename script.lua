@@ -488,7 +488,7 @@ end
 --// BUTTON
 --// =========================
 
-Tab:AddButton({
+Tab2:AddButton({
     Name = "FullBright ON/OFF",
     Callback = function()
         fullbright = not fullbright

@@ -1442,28 +1442,54 @@ end)
 
 ---esp hitbox 
 
---// ESP RGB 
+--// ESP ULTRA COMPLETO
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
 
 local ESP_ENABLED = false
-local ESP_COLOR = Color3.fromRGB(255,0,0)
+local RGB_COLOR = Color3.fromRGB(255,0,0)
 local ESPObjects = {}
+
+local ALERT_DISTANCE = 25
+local alertedPlayers = {}
 
 -- RGB LOOP
 task.spawn(function()
     while true do
         for i = 0,1,0.01 do
-            ESP_COLOR = Color3.fromHSV(i,1,1)
+            RGB_COLOR = Color3.fromHSV(i,1,1)
             task.wait()
         end
     end
 end)
 
--- Criar ESP
+-- COR DA VIDA
+local function GetHealthColor(hp, maxHp)
+    local percent = hp / maxHp
+    if percent > 0.6 then
+        return Color3.fromRGB(0,255,0)
+    elseif percent > 0.3 then
+        return Color3.fromRGB(255,255,0)
+    else
+        return Color3.fromRGB(255,0,0)
+    end
+end
+
+-- SOM
+local function PlayAlert()
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://9118823105"
+    sound.Volume = 1
+    sound.Parent = workspace
+    sound:Play()
+    Debris:AddItem(sound, 2)
+end
+
+-- CRIAR ESP
 local function CreateESP(player)
     if player == LocalPlayer then return end
 
@@ -1479,18 +1505,41 @@ local function CreateESP(player)
     name.Center = true
     name.Outline = true
 
+    local info = Drawing.new("Text")
+    info.Size = 13
+    info.Center = true
+    info.Outline = true
+
+    local healthBar = Drawing.new("Line")
+    healthBar.Thickness = 4
+
+    -- skeleton completo
+    local skeleton = {}
+    for i = 1, 15 do
+        local l = Drawing.new("Line")
+        l.Thickness = 2
+        table.insert(skeleton, l)
+    end
+
     ESPObjects[player] = {
         Box = box,
         Line = line,
-        Name = name
+        Name = name,
+        Info = info,
+        HealthBar = healthBar,
+        Skeleton = skeleton
     }
 end
 
--- Remover ESP
+-- REMOVER
 local function RemoveESP(player)
     if ESPObjects[player] then
         for _, v in pairs(ESPObjects[player]) do
-            v:Remove()
+            if typeof(v) == "table" then
+                for _, l in pairs(v) do l:Remove() end
+            else
+                v:Remove()
+            end
         end
         ESPObjects[player] = nil
     end
@@ -1498,18 +1547,30 @@ end
 
 -- BOTÃO
 Tab:AddButton({
-    Name = "Ativar / Desativar ESP RGB",
+    Name = "Ativar / Desativar ESP ULTRA",
     Callback = function()
         ESP_ENABLED = not ESP_ENABLED
     end
 })
+
+-- FUNÇÃO POSIÇÃO
+local function getPos(part)
+    if part then
+        local pos, vis = Camera:WorldToViewportPoint(part.Position)
+        return Vector2.new(pos.X, pos.Y), vis
+    end
+end
 
 -- LOOP
 RunService.RenderStepped:Connect(function()
     if not ESP_ENABLED then
         for _, drawings in pairs(ESPObjects) do
             for _, v in pairs(drawings) do
-                v.Visible = false
+                if typeof(v) == "table" then
+                    for _, l in pairs(v) do l.Visible = false end
+                else
+                    v.Visible = false
+                end
             end
         end
         return
@@ -1527,49 +1588,113 @@ RunService.RenderStepped:Connect(function()
                 local size = (Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0,3,0)).Y - pos.Y) * 2
 
                 -- DISTÂNCIA
-                local distance = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+                local distance = 0
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    distance = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+                end
+
+                -- ALERTA
+                if distance < ALERT_DISTANCE and not alertedPlayers[player] then
+                    alertedPlayers[player] = true
+                    PlayAlert()
+                elseif distance >= ALERT_DISTANCE then
+                    alertedPlayers[player] = nil
+                end
 
                 -- VIDA
-                local health = math.floor(humanoid.Health)
+                local health = humanoid.Health
+                local maxHealth = humanoid.MaxHealth
+                local hpColor = GetHealthColor(health, maxHealth)
 
                 -- BOX
                 drawings.Box.Size = Vector2.new(size, size * 1.5)
                 drawings.Box.Position = Vector2.new(pos.X - size/2, pos.Y - size)
-                drawings.Box.Color = ESP_COLOR
+                drawings.Box.Color = Color3.fromRGB(0,255,0)
                 drawings.Box.Visible = true
 
                 -- LINHA
                 drawings.Line.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
                 drawings.Line.To = Vector2.new(pos.X, pos.Y)
-                drawings.Line.Color = ESP_COLOR
+                drawings.Line.Color = RGB_COLOR
                 drawings.Line.Visible = true
 
-                -- TEXTO (NOME + VIDA + DISTÂNCIA)
-                drawings.Name.Text = player.Name.." | "..health.." ❤️ HP  | "..distance.."🏃m"
-                drawings.Name.Position = Vector2.new(pos.X, pos.Y - size - 15)
-                drawings.Name.Color = ESP_COLOR
+                -- NOME
+                drawings.Name.Text = player.Name
+                drawings.Name.Position = Vector2.new(pos.X, pos.Y - size - 25)
+                drawings.Name.Color = Color3.fromRGB(255,255,255)
                 drawings.Name.Visible = true
+
+                -- INFO
+                local text = "❤️ "..math.floor(health)
+                if distance > 20 then
+                    text = text.."\n🏃 "..distance.."m"
+                end
+
+                drawings.Info.Text = text
+                drawings.Info.Position = Vector2.new(pos.X, pos.Y - size - 10)
+                drawings.Info.Color = hpColor
+                drawings.Info.Visible = true
+
+                -- BARRA DE VIDA
+                local hpPercent = health / maxHealth
+                drawings.HealthBar.From = Vector2.new(pos.X - size/2 - 5, pos.Y)
+                drawings.HealthBar.To = Vector2.new(pos.X - size/2 - 5, pos.Y - (size * 1.5 * hpPercent))
+                drawings.HealthBar.Color = hpColor
+                drawings.HealthBar.Visible = true
+
+                -- SKELETON COMPLETO
+                local parts = {
+                    {"Head","UpperTorso"},{"UpperTorso","LowerTorso"},
+
+                    {"UpperTorso","LeftUpperArm"},{"LeftUpperArm","LeftLowerArm"},{"LeftLowerArm","LeftHand"},
+                    {"UpperTorso","RightUpperArm"},{"RightUpperArm","RightLowerArm"},{"RightLowerArm","RightHand"},
+
+                    {"LowerTorso","LeftUpperLeg"},{"LeftUpperLeg","LeftLowerLeg"},{"LeftLowerLeg","LeftFoot"},
+                    {"LowerTorso","RightUpperLeg"},{"RightUpperLeg","RightLowerLeg"},{"RightLowerLeg","RightFoot"},
+                }
+
+                for i, pair in ipairs(parts) do
+                    local p1 = char:FindFirstChild(pair[1])
+                    local p2 = char:FindFirstChild(pair[2])
+
+                    if p1 and p2 then
+                        local v1, vis1 = getPos(p1)
+                        local v2, vis2 = getPos(p2)
+
+                        if v1 and v2 and vis1 and vis2 then
+                            local line = drawings.Skeleton[i]
+                            line.From = v1
+                            line.To = v2
+                            line.Color = RGB_COLOR
+                            line.Visible = true
+                        else
+                            drawings.Skeleton[i].Visible = false
+                        end
+                    else
+                        drawings.Skeleton[i].Visible = false
+                    end
+                end
+
             else
-                drawings.Box.Visible = false
-                drawings.Line.Visible = false
-                drawings.Name.Visible = false
+                for _, v in pairs(drawings) do
+                    if typeof(v) == "table" then
+                        for _, l in pairs(v) do l.Visible = false end
+                    else
+                        v.Visible = false
+                    end
+                end
             end
-        else
-            drawings.Box.Visible = false
-            drawings.Line.Visible = false
-            drawings.Name.Visible = false
         end
     end
 end)
 
--- INICIAR
+-- INIT
 for _, player in ipairs(Players:GetPlayers()) do
     CreateESP(player)
 end
 
 Players.PlayerAdded:Connect(CreateESP)
 Players.PlayerRemoving:Connect(RemoveESP)
-
 
 
 

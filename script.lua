@@ -21,7 +21,7 @@ local MobileButton = Minimizer:CreateMobileMinimizer({
 })
 
 
---TAB 1
+--TAB 0
 
 local Tab = Window:MakeTab({
   Title = "Main",
@@ -29,19 +29,24 @@ local Tab = Window:MakeTab({
 })
 
 
+--Tab 1
 
+local Tab1 = Window:MakeTab({
+  Title = "esp",
+  Icon = "Home"
+})
 
---TAB 2
+--TAB 3
 
 local Tab2 = Window:MakeTab({
-  Title = "Config",
+  Title = "config",
   Icon = "gear"
 })
 
 
 
 
---TAB 3
+--TAB 4
 
 local Tab3 = Window:MakeTab({
   Title = "Cuidado",
@@ -56,7 +61,7 @@ local InicionSection = Tab:AddSection("Início")
 
 
 
-
+local InicionSection = Tab1:AddSection("Início")
 
 
 
@@ -1381,7 +1386,7 @@ local function StartSpectate()
 end
 
 --// BOTÃO: Spectar
-Tab:AddButton({
+Tab1:AddButton({
     Name = "Spectar Player",
     Callback = function()
         StartSpectate()
@@ -1404,7 +1409,7 @@ local function StopSpectate()
 end
 
 --// BOTÃO: Parar
-Tab:AddButton({
+Tab1:AddButton({
     Name = "Parar de Spectar",
     Callback = function()
         StopSpectate()
@@ -1546,7 +1551,7 @@ local function RemoveESP(player)
 end
 
 -- BOTÃO
-Tab:AddButton({
+Tab1:AddButton({
     Name = "Ativar / Desativar ESP ULTRA",
     Callback = function()
         ESP_ENABLED = not ESP_ENABLED

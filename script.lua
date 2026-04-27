@@ -70,21 +70,6 @@ local InicionSection = Tab2:AddSection("Início")
 
 
 
--- BOTÃO FULLBRIGHT 
-Tab2:AddButton({
-    Name = "Ativar / Desativar FullBright",
-    Callback = function()
-        fullbright = not fullbright
-
-        if fullbright then
-            EnableFullBright()
-            Notify("🌞 FullBright", "Iluminação ativada com sucesso!")
-        else
-            DisableFullBright()
-            Notify("🌑 FullBright", "Iluminação desativada!")
-        end
-    end
-})
 
 
 
@@ -402,11 +387,66 @@ Tab:AddToggle({
 
 
 
---// FULLBRIGHT + NOTIFY
-
+--// SERVICES
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+--// =========================
+--// NOTIFY SYSTEM
+--// =========================
+
+local function Notify(title, text)
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "NotifyUI"
+    gui.ResetOnSpawn = false
+    gui.Parent = game.CoreGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 260, 0, 60)
+    frame.Position = UDim2.new(1, 300, 0.75, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -10, 0.4, 0)
+    titleLabel.Position = UDim2.new(0, 5, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Color3.fromRGB(0,255,127)
+    titleLabel.TextScaled = true
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = frame
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, -10, 0.6, 0)
+    textLabel.Position = UDim2.new(0, 5, 0.4, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = text
+    textLabel.TextColor3 = Color3.fromRGB(255,255,255)
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.Parent = frame
+
+    -- entrar
+    frame:TweenPosition(UDim2.new(1, -270, 0.75, 0), "Out", "Quad", 0.3, true)
+
+    -- sair
+    task.delay(2.5, function()
+        frame:TweenPosition(UDim2.new(1, 300, 0.75, 0), "In", "Quad", 0.3, true)
+        task.wait(0.3)
+        gui:Destroy()
+    end)
+end
+
+--// =========================
+--// FULLBRIGHT SYSTEM
+--// =========================
 
 local fullbright = false
+local connection
 
 local old = {
     Brightness = Lighting.Brightness,
@@ -415,20 +455,53 @@ local old = {
     GlobalShadows = Lighting.GlobalShadows
 }
 
-local function EnableFullBright()
+local function ApplyFullBright()
     Lighting.Brightness = 5
     Lighting.ClockTime = 14
     Lighting.FogEnd = 100000
     Lighting.GlobalShadows = false
 end
 
-local function DisableFullBright()
+local function StartFullBright()
+    ApplyFullBright()
+
+    connection = RunService.RenderStepped:Connect(function()
+        if fullbright then
+            ApplyFullBright()
+        end
+    end)
+end
+
+local function StopFullBright()
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+
     Lighting.Brightness = old.Brightness
     Lighting.ClockTime = old.ClockTime
     Lighting.FogEnd = old.FogEnd
     Lighting.GlobalShadows = old.GlobalShadows
 end
 
+--// =========================
+--// BUTTON
+--// =========================
+
+Tab:AddButton({
+    Name = "FullBright ON/OFF",
+    Callback = function()
+        fullbright = not fullbright
+
+        if fullbright then
+            StartFullBright()
+            Notify("🌞 FullBright", "Ativado com sucesso!")
+        else
+            StopFullBright()
+            Notify("🌑 FullBright", "Desativado!")
+        end
+    end
+})
 
 
 

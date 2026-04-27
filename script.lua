@@ -36,7 +36,7 @@ local Tab1 = Window:MakeTab({
   Icon = "Home"
 })
 
---TAB 3
+--TAB 2
 
 local Tab2 = Window:MakeTab({
   Title = "config",
@@ -46,7 +46,7 @@ local Tab2 = Window:MakeTab({
 
 
 
---TAB 4
+--TAB 3
 
 local Tab3 = Window:MakeTab({
   Title = "Cuidado",
@@ -66,17 +66,37 @@ local InicionSection = Tab1:AddSection("Início")
 
 
 
---Botão de Tornado 
 
-Tab:AddButton({
-  Name = "Tornado",
-  Debounce = 0.5,
-  Callback = function()
-      Tornado()
-  end
+
+
+-- BOTÃO FULLBRIGHT 
+Tab2:AddButton({
+    Name = "Ativar / Desativar FullBright",
+    Callback = function()
+        fullbright = not fullbright
+
+        if fullbright then
+            EnableFullBright()
+        else
+            DisableFullBright()
+        end
+    end
 })
 
 
+
+
+-- Botão do Noclip 
+Tab:AddButton({
+    Name = "Noclip",
+    Callback = function()
+        if not noclip then
+            StartNoclip()
+        else
+            StopNoclip()
+        end
+    end
+})
 
 
 
@@ -94,24 +114,372 @@ Tab:AddButton({
 
 
 
---Slider de WalkSpeed/Speed
 
-Tab:AddSlider({
-    Name = "WalkSpeed",
-    Min = 16, -- Velocidade mínima (padrão Roblox)
-    Max = 700, -- Velocidade máxima
-   Increment = 1, -- Passo do Slider
-      Default = 16,-- Valor Inicial
-    Callback = function(Value)
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = Value
+--// NOCLIP DISCRETO
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local noclip = false
+local connection
+
+local function SetCollision(state)
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    for _, v in pairs(char:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.CanCollide = state
+        end
+    end
+end
+
+local function StartNoclip()
+    noclip = true
+
+    connection = RunService.Stepped:Connect(function()
+        local char = LocalPlayer.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+        if not char or not humanoid then return end
+
+        -- só ativa noclip quando está andando
+        if humanoid.MoveDirection.Magnitude > 0 then
+            SetCollision(false)
+        else
+            SetCollision(true)
+        end
+    end)
+end
+
+local function StopNoclip()
+    noclip = false
+
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+
+    SetCollision(true)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+local InicionSection = Tab:AddSection("Teleportes")
+
+
+
+
+
+
+--TP
+
+--// TP ATRÁS DO PLAYER (RÁPIDO)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local selectedPlayer = nil
+
+-- LISTA
+local function GetPlayers()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(list, plr.Name)
+        end
+    end
+    return list
+end
+
+-- DROPDOWN
+local PlayerDropdown = Tab:AddDropdown({
+    Name = "Selecionar Player (TP)",
+    Options = GetPlayers(),
+    Callback = function(value)
+        selectedPlayer = value
+    end
+})
+
+-- ATUALIZAR
+Tab:AddButton({
+    Name = "Atualizar Lista",
+    Callback = function()
+        PlayerDropdown:Refresh(GetPlayers())
+    end
+})
+
+-- AUTO UPDATE
+Players.PlayerAdded:Connect(function()
+    PlayerDropdown:Refresh(GetPlayers())
+end)
+
+Players.PlayerRemoving:Connect(function()
+    PlayerDropdown:Refresh(GetPlayers())
+end)
+
+-- TP ATRÁS
+local function TeleportBehind()
+    if not selectedPlayer then return end
+
+    local target = Players:FindFirstChild(selectedPlayer)
+    if not target or not target.Character then return end
+
+    local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+    local myChar = LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+    if targetHRP and myHRP then
+        local behindPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 5)
+        myHRP.CFrame = CFrame.new(behindPos + Vector3.new(0,2,0))
+    end
+end
+
+-- BOTÃO
+Tab:AddButton({
+    Name = "TP Atrás do Player",
+    Callback = TeleportBehind
+})
+
+
+
+
+
+
+
+
+
+--TELEPORTE POR TOQUE
+
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local StarterGui = game:GetService("StarterGui")
+
+local TeleportEnabled = false -- DESATIVADO AO INICIAR
+
+local function Notify(title, text)
+    StarterGui:SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = 4
+    })
+end
+
+local function TeleportFromTouch(position)
+    if not TeleportEnabled then return end -- só funciona se o toggle estiver ligado
+
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local ray = Camera:ScreenPointToRay(position.X, position.Y)
+
+        local params = RaycastParams.new()
+        params.FilterType = Enum.RaycastFilterType.Blacklist
+        params.FilterDescendantsInstances = { LocalPlayer.Character }
+
+        local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+        if result then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(result.Position)
+            Notify("Teleporte", "Você foi teleportado para o local tocado!")
+        else
+            Notify("Erro", "Não encontrei nenhum lugar tocado no mapa!")
+        end
+    end
+end
+
+-- Detecta toque na tela
+UserInputService.InputBegan:Connect(function(input)
+    if TeleportEnabled and input.UserInputType == Enum.UserInputType.Touch then
+        TeleportFromTouch(input.Position)
+    end
+end)
+
+-- 🔥 Toggle na Redz Library
+Tab:AddToggle({
+    Title = "Teleporte Por Toque",
+    Description = "Clique para teleportar para onde tocar na tela",
+    Default = false,
+    Callback = function(state)
+        TeleportEnabled = state
+        if state then
+            Notify("Teleport Ativado", "Toque na tela para teleportar.")
+        else
+            Notify("Teleport Desativado", "Toque não teleporta mais.")
         end
     end
 })
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--Botão de Tornado 
+
+Tab3:AddButton({
+  Name = "Tornado",
+  Debounce = 0.5,
+  Callback = function()
+      Tornado()
+  end
+})
+
+
+
+
+
+
+
+
+
+
+--// WALKSPEED LEGIT
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local speed = 30 -- velocidade alvo
+local enabled = false
+
+local connection
+
+local function StartLegitSpeed()
+    connection = RunService.RenderStepped:Connect(function()
+        local char = LocalPlayer.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+        if not humanoid then return end
+
+        if humanoid.MoveDirection.Magnitude > 0 then
+            -- aumenta suavemente
+            humanoid.WalkSpeed = humanoid.WalkSpeed + (speed - humanoid.WalkSpeed) * 0.2
+        else
+            -- volta ao normal
+            humanoid.WalkSpeed = 16
+        end
+    end)
+end
+
+local function StopLegitSpeed()
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+
+    local char = LocalPlayer.Character
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = 16
+    end
+end
+
+-- BOTÃO
+Tab:AddButton({
+    Name = "Legit Speed (ON/OFF)",
+    Callback = function()
+        enabled = not enabled
+
+        if enabled then
+            StartLegitSpeed()
+        else
+            StopLegitSpeed()
+        end
+    end
+})
+
+-- SLIDER
+Tab:AddSlider({
+    Name = "Velocidade",
+    Min = 16,
+    Max = 60,
+    Default = 30,
+    Callback = function(value)
+        speed = value
+    end
+})
+
+
+
+
+
+
+--// FULLBRIGHT
+
+local Lighting = game:GetService("Lighting")
+
+local fullbright = false
+
+-- salvar valores originais
+local old = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    FogEnd = Lighting.FogEnd,
+    GlobalShadows = Lighting.GlobalShadows
+}
+
+local function EnableFullBright()
+    Lighting.Brightness = 5
+    Lighting.ClockTime = 14
+    Lighting.FogEnd = 100000
+    Lighting.GlobalShadows = false
+end
+
+local function DisableFullBright()
+    Lighting.Brightness = old.Brightness
+    Lighting.ClockTime = old.ClockTime
+    Lighting.FogEnd = old.FogEnd
+    Lighting.GlobalShadows = old.GlobalShadows
+end
+
+-- BOTÃO
+Tab2:AddButton({
+    Name = "Ativar / Desativar FullBright",
+    Callback = function()
+        fullbright = not fullbright
+
+        if fullbright then
+            EnableFullBright()
+        else
+            DisableFullBright()
+        end
+    end
+})
 
 
 
@@ -1299,6 +1667,9 @@ end
 
 
 
+
+
+
 --// ESPECTAR PLAYER (VERSÃO ESTÁVEL)
 
 local Players = game:GetService("Players")
@@ -1710,6 +2081,63 @@ Players.PlayerRemoving:Connect(RemoveESP)
 
 
 
+
+
+
+
+--// FULLBRIGHT
+
+local Lighting = game:GetService("Lighting")
+
+local fullbright = false
+
+-- salvar valores originais
+local old = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    FogEnd = Lighting.FogEnd,
+    GlobalShadows = Lighting.GlobalShadows
+}
+
+local function EnableFullBright()
+    Lighting.Brightness = 5
+    Lighting.ClockTime = 14
+    Lighting.FogEnd = 100000
+    Lighting.GlobalShadows = false
+end
+
+local function DisableFullBright()
+    Lighting.Brightness = old.Brightness
+    Lighting.ClockTime = old.ClockTime
+    Lighting.FogEnd = old.FogEnd
+    Lighting.GlobalShadows = old.GlobalShadows
+end
+
+-- BOTÃO
+Tab:AddButton({
+    Name = "Ativar / Desativar FullBright",
+    Callback = function()
+        fullbright = not fullbright
+
+        if fullbright then
+            EnableFullBright()
+        else
+            DisableFullBright()
+        end
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
 --ANTI-AFK
 
 
@@ -1984,146 +2412,3 @@ end
 
 
 
---// NOCLIP DISCRETO
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-
-local noclip = false
-local connection
-
-local function SetCollision(state)
-    local char = LocalPlayer.Character
-    if not char then return end
-
-    for _, v in pairs(char:GetDescendants()) do
-        if v:IsA("BasePart") then
-            v.CanCollide = state
-        end
-    end
-end
-
-local function StartNoclip()
-    noclip = true
-
-    connection = RunService.Stepped:Connect(function()
-        local char = LocalPlayer.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-
-        if not char or not humanoid then return end
-
-        -- só ativa noclip quando está andando
-        if humanoid.MoveDirection.Magnitude > 0 then
-            SetCollision(false)
-        else
-            SetCollision(true)
-        end
-    end)
-end
-
-local function StopNoclip()
-    noclip = false
-
-    if connection then
-        connection:Disconnect()
-        connection = nil
-    end
-
-    SetCollision(true)
-end
-
--- BOTÃO
-Tab:AddButton({
-    Name = "Noclip",
-    Callback = function()
-        if not noclip then
-            StartNoclip()
-        else
-            StopNoclip()
-        end
-    end
-})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---TP
-
---// TP ATRÁS DO PLAYER (RÁPIDO)
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-local selectedPlayer = nil
-
--- LISTA
-local function GetPlayers()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(list, plr.Name)
-        end
-    end
-    return list
-end
-
--- DROPDOWN
-local PlayerDropdown = Tab:AddDropdown({
-    Name = "Selecionar Player (TP)",
-    Options = GetPlayers(),
-    Callback = function(value)
-        selectedPlayer = value
-    end
-})
-
--- ATUALIZAR
-Tab:AddButton({
-    Name = "Atualizar Lista",
-    Callback = function()
-        PlayerDropdown:Refresh(GetPlayers())
-    end
-})
-
--- AUTO UPDATE
-Players.PlayerAdded:Connect(function()
-    PlayerDropdown:Refresh(GetPlayers())
-end)
-
-Players.PlayerRemoving:Connect(function()
-    PlayerDropdown:Refresh(GetPlayers())
-end)
-
--- TP ATRÁS
-local function TeleportBehind()
-    if not selectedPlayer then return end
-
-    local target = Players:FindFirstChild(selectedPlayer)
-    if not target or not target.Character then return end
-
-    local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
-    local myChar = LocalPlayer.Character
-    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-
-    if targetHRP and myHRP then
-        local behindPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 5)
-        myHRP.CFrame = CFrame.new(behindPos + Vector3.new(0,2,0))
-    end
-end
-
--- BOTÃO
-Tab:AddButton({
-    Name = "TP Atrás do Player",
-    Callback = TeleportBehind
-})

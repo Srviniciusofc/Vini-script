@@ -78,8 +78,10 @@ Tab2:AddButton({
 
         if fullbright then
             EnableFullBright()
+            Notify("🌞 FullBright", "Iluminação ativada com sucesso!")
         else
             DisableFullBright()
+            Notify("🌑 FullBright", "Iluminação desativada!")
         end
     end
 })
@@ -400,13 +402,12 @@ Tab:AddToggle({
 
 
 
---// FULLBRIGHT
+--// FULLBRIGHT + NOTIFY
 
 local Lighting = game:GetService("Lighting")
 
 local fullbright = false
 
--- salvar valores originais
 local old = {
     Brightness = Lighting.Brightness,
     ClockTime = Lighting.ClockTime,
@@ -427,6 +428,7 @@ local function DisableFullBright()
     Lighting.FogEnd = old.FogEnd
     Lighting.GlobalShadows = old.GlobalShadows
 end
+
 
 
 

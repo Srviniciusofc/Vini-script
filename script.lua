@@ -2495,3 +2495,144 @@ Tab:AddSlider({
         SMOOTHNESS = v / 100
     end
 })
+
+
+
+
+
+
+
+
+
+--// AIM ASSIST (ATIVA SOMENTE AO ATIRAR)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local AIM_ENABLED = false
+local SHOOTING = false
+
+local FOV = 150
+local STRENGTH = 0.30
+local PREDICTION = 0.15
+
+-- FOV CIRCLE
+local circle = Drawing.new("Circle")
+circle.Thickness = 2
+circle.NumSides = 100
+circle.Radius = FOV
+circle.Filled = false
+circle.Visible = false
+
+-- INPUT (ATIRAR)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        SHOOTING = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        SHOOTING = false
+    end
+end)
+
+-- PART AIM
+local function GetHead(char)
+    return char and char:FindFirstChild("Head")
+end
+
+-- PREDICTION
+local function Predict(head)
+    local root = head.Parent:FindFirstChild("HumanoidRootPart")
+    if not root then return head.Position end
+
+    local vel = root.Velocity
+    return head.Position + Vector3.new(vel.X, 0, vel.Z) * PREDICTION
+end
+
+-- CLOSEST TARGET
+local function GetClosest()
+    local closest
+    local shortest = math.huge
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local head = GetHead(plr.Character)
+
+            if head then
+                local pos = Camera:WorldToViewportPoint(head.Position)
+
+                if pos.Z > 0 then
+                    local dist = (Vector2.new(pos.X, pos.Y) -
+                                  Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+
+                    if dist < FOV and dist < shortest then
+                        shortest = dist
+                        closest = plr
+                    end
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+-- LOOP
+RunService.RenderStepped:Connect(function()
+    circle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    circle.Radius = FOV
+    circle.Visible = AIM_ENABLED
+
+    if not AIM_ENABLED then return end
+    if not SHOOTING then return end -- 🔥 SÓ QUANDO ATIRA
+
+    local target = GetClosest()
+    if not target or not target.Character then return end
+
+    local head = GetHead(target.Character)
+    if not head then return end
+
+    local predicted = Predict(head)
+
+    local camPos = Camera.CFrame.Position
+    local look = CFrame.new(camPos, predicted)
+
+    Camera.CFrame = Camera.CFrame:Lerp(look, STRENGTH)
+end)
+
+-- BOTÃO
+Tab:AddButton({
+    Name = "Aim Assist (Shoot Only)",
+    Callback = function()
+        AIM_ENABLED = not AIM_ENABLED
+    end
+})
+
+-- FOV SLIDER
+Tab:AddSlider({
+    Name = "FOV",
+    Min = 50,
+    Max = 300,
+    Default = 150,
+    Callback = function(v)
+        FOV = v
+    end
+})
+
+-- FORÇA SLIDER
+Tab:AddSlider({
+    Name = "Força da Mira",
+    Min = 1,
+    Max = 100,
+    Default = 30,
+    Callback = function(v)
+        STRENGTH = v / 100
+    end
+})

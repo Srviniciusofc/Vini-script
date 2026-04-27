@@ -1324,7 +1324,7 @@ local function UpdatePlayerList()
 end
 
 --// DROPDOWN
-local PlayerDropdown = Tab:AddDropdown({
+local PlayerDropdown = Tab1:AddDropdown({
     Name = "Lista de Jogadores",
     Options = UpdatePlayerList(),
     Callback = function(value)
@@ -1333,7 +1333,7 @@ local PlayerDropdown = Tab:AddDropdown({
 })
 
 --// BOTÃO: Atualizar lista manual
-Tab:AddButton({
+Tab1:AddButton({
     Name = "Atualizar Lista",
     Callback = function()
         PlayerDropdown:Refresh(UpdatePlayerList())

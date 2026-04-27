@@ -1854,101 +1854,69 @@ end
 
 
 
---// FLY MODERNO (SEM BODYVELOCITY)
+--// FLY COMPLETO (INFINITY + SLIDER)
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local flying = false
-local speed = 80
+local speed = 60
 
-local velocity, gyro
+local bodyGyro, bodyVelocity
 
--- CONTROLES
-local keys = {
-    W = false,
-    A = false,
-    S = false,
-    D = false,
-    Space = false,
-    Shift = false
-}
-
--- INPUT
-UserInputService.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if keys[input.KeyCode.Name] ~= nil then
-        keys[input.KeyCode.Name] = true
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if keys[input.KeyCode.Name] ~= nil then
-        keys[input.KeyCode.Name] = false
-    end
-end)
-
--- FUNÇÃO FLY
 local function StartFly()
     local char = LocalPlayer.Character
     if not char then return end
 
     local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local attachment = Instance.new("Attachment")
-    attachment.Parent = hrp
-
-    velocity = Instance.new("LinearVelocity")
-    velocity.Attachment0 = attachment
-    velocity.MaxForce = math.huge
-    velocity.VectorVelocity = Vector3.new(0,0,0)
-    velocity.Parent = hrp
-
-    gyro = Instance.new("AlignOrientation")
-    gyro.Attachment0 = attachment
-    gyro.MaxTorque = math.huge
-    gyro.Responsiveness = 15
-    gyro.Parent = hrp
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not humanoid then return end
 
     flying = true
+    humanoid.PlatformStand = true
+
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.P = 9e4
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.Parent = hrp
+
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bodyVelocity.Parent = hrp
+
+    RunService:BindToRenderStep("Fly", 0, function()
+        if not flying then return end
+
+        local move = humanoid.MoveDirection
+        local camCF = Camera.CFrame
+
+        local direction =
+            (camCF.LookVector * move.Z) +
+            (camCF.RightVector * move.X)
+
+        bodyVelocity.Velocity = direction * speed
+        bodyGyro.CFrame = camCF
+    end)
 end
 
 local function StopFly()
     flying = false
-    if velocity then velocity:Destroy() end
-    if gyro then gyro:Destroy() end
-end
-
--- LOOP
-RunService.RenderStepped:Connect(function()
-    if not flying then return end
+    RunService:UnbindFromRenderStep("Fly")
 
     local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local moveDir = Vector3.new(0,0,0)
-
-    if keys.W then moveDir = moveDir + Camera.CFrame.LookVector end
-    if keys.S then moveDir = moveDir - Camera.CFrame.LookVector end
-    if keys.A then moveDir = moveDir - Camera.CFrame.RightVector end
-    if keys.D then moveDir = moveDir + Camera.CFrame.RightVector end
-    if keys.Space then moveDir = moveDir + Vector3.new(0,1,0) end
-    if keys.Shift then moveDir = moveDir - Vector3.new(0,1,0) end
-
-    if moveDir.Magnitude > 0 then
-        moveDir = moveDir.Unit * speed
+    if char then
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.PlatformStand = false
+        end
     end
 
-    velocity.VectorVelocity = moveDir
-
-    gyro.CFrame = CFrame.new(hrp.Position, hrp.Position + Camera.CFrame.LookVector)
-end)
+    if bodyGyro then bodyGyro:Destroy() end
+    if bodyVelocity then bodyVelocity:Destroy() end
+end
 
 -- BOTÕES
 Tab:AddButton({
@@ -1959,4 +1927,15 @@ Tab:AddButton({
 Tab:AddButton({
     Name = "Desativar Fly",
     Callback = StopFly
+})
+
+-- SLIDER DE VELOCIDADE 🔥
+Tab:AddSlider({
+    Name = "Velocidade do Fly",
+    Min = 10,
+    Max = 200,
+    Default = 60,
+    Callback = function(value)
+        speed = value
+    end
 })

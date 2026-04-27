@@ -400,6 +400,33 @@ Tab:AddToggle({
 
 
 
+--// FULLBRIGHT
+
+local Lighting = game:GetService("Lighting")
+
+local fullbright = false
+
+-- salvar valores originais
+local old = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    FogEnd = Lighting.FogEnd,
+    GlobalShadows = Lighting.GlobalShadows
+}
+
+local function EnableFullBright()
+    Lighting.Brightness = 5
+    Lighting.ClockTime = 14
+    Lighting.FogEnd = 100000
+    Lighting.GlobalShadows = false
+end
+
+local function DisableFullBright()
+    Lighting.Brightness = old.Brightness
+    Lighting.ClockTime = old.ClockTime
+    Lighting.FogEnd = old.FogEnd
+    Lighting.GlobalShadows = old.GlobalShadows
+end
 
 
 
@@ -440,33 +467,6 @@ Tab3:AddButton({
 
 
 
---// FULLBRIGHT
-
-local Lighting = game:GetService("Lighting")
-
-local fullbright = false
-
--- salvar valores originais
-local old = {
-    Brightness = Lighting.Brightness,
-    ClockTime = Lighting.ClockTime,
-    FogEnd = Lighting.FogEnd,
-    GlobalShadows = Lighting.GlobalShadows
-}
-
-local function EnableFullBright()
-    Lighting.Brightness = 5
-    Lighting.ClockTime = 14
-    Lighting.FogEnd = 100000
-    Lighting.GlobalShadows = false
-end
-
-local function DisableFullBright()
-    Lighting.Brightness = old.Brightness
-    Lighting.ClockTime = old.ClockTime
-    Lighting.FogEnd = old.FogEnd
-    Lighting.GlobalShadows = old.GlobalShadows
-end
 
 
 
@@ -2074,47 +2074,6 @@ Players.PlayerRemoving:Connect(RemoveESP)
 
 
 
---// FULLBRIGHT
-
-local Lighting = game:GetService("Lighting")
-
-local fullbright = false
-
--- salvar valores originais
-local old = {
-    Brightness = Lighting.Brightness,
-    ClockTime = Lighting.ClockTime,
-    FogEnd = Lighting.FogEnd,
-    GlobalShadows = Lighting.GlobalShadows
-}
-
-local function EnableFullBright()
-    Lighting.Brightness = 5
-    Lighting.ClockTime = 14
-    Lighting.FogEnd = 100000
-    Lighting.GlobalShadows = false
-end
-
-local function DisableFullBright()
-    Lighting.Brightness = old.Brightness
-    Lighting.ClockTime = old.ClockTime
-    Lighting.FogEnd = old.FogEnd
-    Lighting.GlobalShadows = old.GlobalShadows
-end
-
--- BOTÃO
-Tab:AddButton({
-    Name = "Ativar / Desativar FullBright",
-    Callback = function()
-        fullbright = not fullbright
-
-        if fullbright then
-            EnableFullBright()
-        else
-            DisableFullBright()
-        end
-    end
-})
 
 
 
@@ -2153,75 +2112,6 @@ LocalPlayer.Idled:Connect(function()
         print("Anti-AFK ativado: ação simulada")
     end
 end)
-
-
-
-
-
-
---TELEPORTE POR TOQUE
-
-
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local StarterGui = game:GetService("StarterGui")
-
-local TeleportEnabled = false -- DESATIVADO AO INICIAR
-
-local function Notify(title, text)
-    StarterGui:SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = 4
-    })
-end
-
-local function TeleportFromTouch(position)
-    if not TeleportEnabled then return end -- só funciona se o toggle estiver ligado
-
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local ray = Camera:ScreenPointToRay(position.X, position.Y)
-
-        local params = RaycastParams.new()
-        params.FilterType = Enum.RaycastFilterType.Blacklist
-        params.FilterDescendantsInstances = { LocalPlayer.Character }
-
-        local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
-        if result then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(result.Position)
-            Notify("Teleporte", "Você foi teleportado para o local tocado!")
-        else
-            Notify("Erro", "Não encontrei nenhum lugar tocado no mapa!")
-        end
-    end
-end
-
--- Detecta toque na tela
-UserInputService.InputBegan:Connect(function(input)
-    if TeleportEnabled and input.UserInputType == Enum.UserInputType.Touch then
-        TeleportFromTouch(input.Position)
-    end
-end)
-
--- 🔥 Toggle na Redz Library
-Tab:AddToggle({
-    Title = "Teleporte Por Toque",
-    Description = "Clique para teleportar para onde tocar na tela",
-    Default = false,
-    Callback = function(state)
-        TeleportEnabled = state
-        if state then
-            Notify("Teleport Ativado", "Toque na tela para teleportar.")
-        else
-            Notify("Teleport Desativado", "Toque não teleporta mais.")
-        end
-    end
-})
-
-
-
 
 
 

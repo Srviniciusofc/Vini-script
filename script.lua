@@ -2366,7 +2366,7 @@ end
 
 
 
---// AIM ASSIST
+--// AIM ASSIST FORTE
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -2375,10 +2375,11 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local AIM_ENABLED = false
-local FOV = 120
-local SMOOTHNESS = 0.15
+local FOV = 150
+local SMOOTHNESS = 0.25 -- ↑ mais alto = puxa mais forte
+local PREDICTION_TIME = 0.2
 
--- círculo FOV
+-- FOV visual
 local circle = Drawing.new("Circle")
 circle.Thickness = 2
 circle.NumSides = 100
@@ -2386,24 +2387,37 @@ circle.Radius = FOV
 circle.Filled = false
 circle.Visible = false
 
--- pegar player mais próximo da mira
-local function GetClosestPlayer()
+local function GetHead(char)
+    return char and char:FindFirstChild("Head")
+end
+
+local function Predict(head)
+    if not head then return nil end
+
+    local root = head.Parent:FindFirstChild("HumanoidRootPart")
+    if not root then return head.Position end
+
+    local velocity = root.Velocity
+    return head.Position + Vector3.new(velocity.X, 0, velocity.Z) * PREDICTION_TIME
+end
+
+local function GetClosest()
     local closest = nil
-    local shortestDistance = FOV
+    local dist = FOV
 
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local head = player.Character:FindFirstChild("Head")
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local head = GetHead(plr.Character)
+
             if head then
-                local pos, visible = Camera:WorldToViewportPoint(head.Position)
+                local pos = Camera:WorldToViewportPoint(head.Position)
 
-                if visible then
-                    local distance = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                local mag = (Vector2.new(pos.X, pos.Y) -
+                             Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
 
-                    if distance < shortestDistance then
-                        shortestDistance = distance
-                        closest = player
-                    end
+                if mag < dist then
+                    dist = mag
+                    closest = plr
                 end
             end
         end
@@ -2412,7 +2426,6 @@ local function GetClosestPlayer()
     return closest
 end
 
--- loop
 RunService.RenderStepped:Connect(function()
     circle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
     circle.Radius = FOV
@@ -2420,22 +2433,23 @@ RunService.RenderStepped:Connect(function()
 
     if not AIM_ENABLED then return end
 
-    local target = GetClosestPlayer()
+    local target = GetClosest()
+    if not target or not target.Character then return end
 
-    if target and target.Character then
-        local head = target.Character:FindFirstChild("Head")
-        if head then
-            local currentCFrame = Camera.CFrame
-            local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
+    local head = GetHead(target.Character)
+    if not head then return end
 
-            Camera.CFrame = currentCFrame:Lerp(targetCFrame, SMOOTHNESS)
-        end
-    end
+    local predicted = Predict(head)
+
+    local cf = CFrame.new(Camera.CFrame.Position, predicted)
+
+    -- 🔥 MAIS FORTE (sem suavidade fraca)
+    Camera.CFrame = cf:Lerp(Camera.CFrame, 1 - SMOOTHNESS)
 end)
 
 -- BOTÃO
 Tab:AddButton({
-    Name = "Aim Assist ON/OFF",
+    Name = "Aim Assist FORTE",
     Callback = function()
         AIM_ENABLED = not AIM_ENABLED
     end
@@ -2443,22 +2457,22 @@ Tab:AddButton({
 
 -- SLIDER FOV
 Tab:AddSlider({
-    Name = "FOV Aim",
+    Name = "FOV",
     Min = 50,
     Max = 300,
-    Default = 120,
-    Callback = function(value)
-        FOV = value
+    Default = 150,
+    Callback = function(v)
+        FOV = v
     end
 })
 
--- SLIDER SMOOTH
+-- SLIDER FORÇA
 Tab:AddSlider({
-    Name = "Suavidade",
-    Min = 1,
+    Name = "Força da Mira",
+    Min = 10,
     Max = 100,
-    Default = 15,
-    Callback = function(value)
-        SMOOTHNESS = value / 100
+    Default = 25,
+    Callback = function(v)
+        SMOOTHNESS = v / 100
     end
 })

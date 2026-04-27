@@ -1979,88 +1979,64 @@ end
 
 
 
---// FLY COMPLETO (INFINITY + SLIDER)
+--// NOCLIP DISCRETO
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 
-local flying = false
-local speed = 60
+local noclip = false
+local connection
 
-local bodyGyro, bodyVelocity
-
-local function StartFly()
+local function SetCollision(state)
     local char = LocalPlayer.Character
     if not char then return end
 
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not humanoid then return end
+    for _, v in pairs(char:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.CanCollide = state
+        end
+    end
+end
 
-    flying = true
-    humanoid.PlatformStand = true
+local function StartNoclip()
+    noclip = true
 
-    bodyGyro = Instance.new("BodyGyro")
-    bodyGyro.P = 9e4
-    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    bodyGyro.Parent = hrp
+    connection = RunService.Stepped:Connect(function()
+        local char = LocalPlayer.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 
-    bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    bodyVelocity.Parent = hrp
+        if not char or not humanoid then return end
 
-    RunService:BindToRenderStep("Fly", 0, function()
-        if not flying then return end
-
-        local move = humanoid.MoveDirection
-        local camCF = Camera.CFrame
-
-        local direction =
-            (camCF.LookVector * move.Z) +
-            (camCF.RightVector * move.X)
-
-        bodyVelocity.Velocity = direction * speed
-        bodyGyro.CFrame = camCF
+        -- só ativa noclip quando está andando
+        if humanoid.MoveDirection.Magnitude > 0 then
+            SetCollision(false)
+        else
+            SetCollision(true)
+        end
     end)
 end
 
-local function StopFly()
-    flying = false
-    RunService:UnbindFromRenderStep("Fly")
+local function StopNoclip()
+    noclip = false
 
-    local char = LocalPlayer.Character
-    if char then
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.PlatformStand = false
-        end
+    if connection then
+        connection:Disconnect()
+        connection = nil
     end
 
-    if bodyGyro then bodyGyro:Destroy() end
-    if bodyVelocity then bodyVelocity:Destroy() end
+    SetCollision(true)
 end
 
--- BOTÕES
+-- BOTÃO
 Tab:AddButton({
-    Name = "Ativar Fly",
-    Callback = StartFly
-})
-
-Tab:AddButton({
-    Name = "Desativar Fly",
-    Callback = StopFly
-})
-
--- SLIDER DE VELOCIDADE 🔥
-Tab:AddSlider({
-    Name = "Velocidade do Fly",
-    Min = 10,
-    Max = 200,
-    Default = 60,
-    Callback = function(value)
-        speed = value
+    Name = "Noclip (Discreto)",
+    Callback = function()
+        if not noclip then
+            StartNoclip()
+        else
+            StopNoclip()
+        end
     end
 })

@@ -2031,7 +2031,7 @@ end
 
 -- BOTÃO
 Tab:AddButton({
-    Name = "Noclip (Discreto)",
+    Name = "Noclip",
     Callback = function()
         if not noclip then
             StartNoclip()
@@ -2039,4 +2039,86 @@ Tab:AddButton({
             StopNoclip()
         end
     end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--TP
+
+--// TP ATRÁS DO PLAYER (RÁPIDO)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local selectedPlayer = nil
+
+-- LISTA
+local function GetPlayers()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(list, plr.Name)
+        end
+    end
+    return list
+end
+
+-- DROPDOWN
+local PlayerDropdown = Tab:AddDropdown({
+    Name = "Selecionar Player (TP)",
+    Options = GetPlayers(),
+    Callback = function(value)
+        selectedPlayer = value
+    end
+})
+
+-- ATUALIZAR
+Tab:AddButton({
+    Name = "Atualizar Lista",
+    Callback = function()
+        PlayerDropdown:Refresh(GetPlayers())
+    end
+})
+
+-- AUTO UPDATE
+Players.PlayerAdded:Connect(function()
+    PlayerDropdown:Refresh(GetPlayers())
+end)
+
+Players.PlayerRemoving:Connect(function()
+    PlayerDropdown:Refresh(GetPlayers())
+end)
+
+-- TP ATRÁS
+local function TeleportBehind()
+    if not selectedPlayer then return end
+
+    local target = Players:FindFirstChild(selectedPlayer)
+    if not target or not target.Character then return end
+
+    local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+    local myChar = LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+    if targetHRP and myHRP then
+        local behindPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 5)
+        myHRP.CFrame = CFrame.new(behindPos + Vector3.new(0,2,0))
+    end
+end
+
+-- BOTÃO
+Tab:AddButton({
+    Name = "TP Atrás do Player",
+    Callback = TeleportBehind
 })

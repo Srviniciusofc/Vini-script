@@ -1545,7 +1545,7 @@ RunService.RenderStepped:Connect(function()
                 drawings.Line.Visible = true
 
                 -- TEXTO (NOME + VIDA + DISTÂNCIA)
-                drawings.Name.Text = player.Name.." | "..health.." HP | "..distance.."m"
+                drawings.Name.Text = player.Name.." | "..health.." ❤️ HP  | "..distance.."🏃m"
                 drawings.Name.Position = Vector2.new(pos.X, pos.Y - size - 15)
                 drawings.Name.Color = ESP_COLOR
                 drawings.Name.Visible = true

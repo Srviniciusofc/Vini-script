@@ -1442,7 +1442,7 @@ end)
 
 ---esp hitbox 
 
---// ESP RGB (BOTÃO PADRÃO)
+--// ESP RGB 
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -1496,7 +1496,7 @@ local function RemoveESP(player)
     end
 end
 
--- BOTÃO ESTILO SIMPLES (IGUAL AO OUTRO)
+-- BOTÃO
 Tab:AddButton({
     Name = "Ativar / Desativar ESP RGB",
     Callback = function()
@@ -1504,7 +1504,7 @@ Tab:AddButton({
     end
 })
 
--- LOOP ESP
+-- LOOP
 RunService.RenderStepped:Connect(function()
     if not ESP_ENABLED then
         for _, drawings in pairs(ESPObjects) do
@@ -1526,17 +1526,26 @@ RunService.RenderStepped:Connect(function()
             if onScreen then
                 local size = (Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0,3,0)).Y - pos.Y) * 2
 
+                -- DISTÂNCIA
+                local distance = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+
+                -- VIDA
+                local health = math.floor(humanoid.Health)
+
+                -- BOX
                 drawings.Box.Size = Vector2.new(size, size * 1.5)
                 drawings.Box.Position = Vector2.new(pos.X - size/2, pos.Y - size)
                 drawings.Box.Color = ESP_COLOR
                 drawings.Box.Visible = true
 
+                -- LINHA
                 drawings.Line.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
                 drawings.Line.To = Vector2.new(pos.X, pos.Y)
                 drawings.Line.Color = ESP_COLOR
                 drawings.Line.Visible = true
 
-                drawings.Name.Text = player.Name
+                -- TEXTO (NOME + VIDA + DISTÂNCIA)
+                drawings.Name.Text = player.Name.." | "..health.." HP | "..distance.."m"
                 drawings.Name.Position = Vector2.new(pos.X, pos.Y - size - 15)
                 drawings.Name.Color = ESP_COLOR
                 drawings.Name.Visible = true

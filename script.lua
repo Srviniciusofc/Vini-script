@@ -1432,6 +1432,145 @@ end)
 
 
 
+
+
+
+
+
+
+
+
+---esp hitbox 
+
+--// ESP RGB (BOTÃO PADRÃO)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+local ESP_ENABLED = false
+local ESP_COLOR = Color3.fromRGB(255,0,0)
+local ESPObjects = {}
+
+-- RGB LOOP
+task.spawn(function()
+    while true do
+        for i = 0,1,0.01 do
+            ESP_COLOR = Color3.fromHSV(i,1,1)
+            task.wait()
+        end
+    end
+end)
+
+-- Criar ESP
+local function CreateESP(player)
+    if player == LocalPlayer then return end
+
+    local box = Drawing.new("Square")
+    box.Thickness = 2
+    box.Filled = false
+
+    local line = Drawing.new("Line")
+    line.Thickness = 2
+
+    local name = Drawing.new("Text")
+    name.Size = 13
+    name.Center = true
+    name.Outline = true
+
+    ESPObjects[player] = {
+        Box = box,
+        Line = line,
+        Name = name
+    }
+end
+
+-- Remover ESP
+local function RemoveESP(player)
+    if ESPObjects[player] then
+        for _, v in pairs(ESPObjects[player]) do
+            v:Remove()
+        end
+        ESPObjects[player] = nil
+    end
+end
+
+-- BOTÃO ESTILO SIMPLES (IGUAL AO OUTRO)
+Tab:AddButton({
+    Name = "Ativar / Desativar ESP RGB",
+    Callback = function()
+        ESP_ENABLED = not ESP_ENABLED
+    end
+})
+
+-- LOOP ESP
+RunService.RenderStepped:Connect(function()
+    if not ESP_ENABLED then
+        for _, drawings in pairs(ESPObjects) do
+            for _, v in pairs(drawings) do
+                v.Visible = false
+            end
+        end
+        return
+    end
+
+    for player, drawings in pairs(ESPObjects) do
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local humanoid = char and char:FindFirstChild("Humanoid")
+
+        if char and hrp and humanoid and humanoid.Health > 0 then
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+            if onScreen then
+                local size = (Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0,3,0)).Y - pos.Y) * 2
+
+                drawings.Box.Size = Vector2.new(size, size * 1.5)
+                drawings.Box.Position = Vector2.new(pos.X - size/2, pos.Y - size)
+                drawings.Box.Color = ESP_COLOR
+                drawings.Box.Visible = true
+
+                drawings.Line.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                drawings.Line.To = Vector2.new(pos.X, pos.Y)
+                drawings.Line.Color = ESP_COLOR
+                drawings.Line.Visible = true
+
+                drawings.Name.Text = player.Name
+                drawings.Name.Position = Vector2.new(pos.X, pos.Y - size - 15)
+                drawings.Name.Color = ESP_COLOR
+                drawings.Name.Visible = true
+            else
+                drawings.Box.Visible = false
+                drawings.Line.Visible = false
+                drawings.Name.Visible = false
+            end
+        else
+            drawings.Box.Visible = false
+            drawings.Line.Visible = false
+            drawings.Name.Visible = false
+        end
+    end
+end)
+
+-- INICIAR
+for _, player in ipairs(Players:GetPlayers()) do
+    CreateESP(player)
+end
+
+Players.PlayerAdded:Connect(CreateESP)
+Players.PlayerRemoving:Connect(RemoveESP)
+
+
+
+
+
+
+
+
+
+
+
 --ANTI-AFK
 
 

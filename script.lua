@@ -2366,8 +2366,6 @@ end
 
 
 
---// AIM ASSIST FORTE
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -2376,10 +2374,9 @@ local Camera = workspace.CurrentCamera
 
 local AIM_ENABLED = false
 local FOV = 150
-local SMOOTHNESS = 0.25 -- ↑ mais alto = puxa mais forte
-local PREDICTION_TIME = 0.2
+local SMOOTHNESS = 0.25
+local PREDICTION = 0.15
 
--- FOV visual
 local circle = Drawing.new("Circle")
 circle.Thickness = 2
 circle.NumSides = 100
@@ -2387,36 +2384,56 @@ circle.Radius = FOV
 circle.Filled = false
 circle.Visible = false
 
-local function GetHead(char)
-    return char and char:FindFirstChild("Head")
+-- 🎯 pega head ou torso (inteligente)
+local function GetAimPart(char)
+    if not char then return nil end
+
+    local head = char:FindFirstChild("Head")
+    local torso = char:FindFirstChild("HumanoidRootPart")
+
+    if head and torso then
+        -- alterna conforme distância da câmera
+        local dist = (Camera.CFrame.Position - head.Position).Magnitude
+
+        if dist < 60 then
+            return head -- perto: head
+        else
+            return torso -- longe: torso
+        end
+    end
+
+    return head or torso
 end
 
-local function Predict(head)
-    if not head then return nil end
+-- 🧠 previsão corrigida (sem subir demais)
+local function Predict(part)
+    if not part then return nil end
 
-    local root = head.Parent:FindFirstChild("HumanoidRootPart")
-    if not root then return head.Position end
+    local root = part.Parent:FindFirstChild("HumanoidRootPart")
+    if not root then return part.Position end
 
-    local velocity = root.Velocity
-    return head.Position + Vector3.new(velocity.X, 0, velocity.Z) * PREDICTION_TIME
+    local vel = root.Velocity
+
+    -- corta eixo Y pra não mirar acima da cabeça
+    local flatVel = Vector3.new(vel.X, 0, vel.Z)
+
+    return part.Position + (flatVel * PREDICTION)
 end
 
+-- 🎯 melhor alvo REAL (3D distance)
 local function GetClosest()
     local closest = nil
-    local dist = FOV
+    local shortest = math.huge
 
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
-            local head = GetHead(plr.Character)
 
-            if head then
-                local pos = Camera:WorldToViewportPoint(head.Position)
+            local part = GetAimPart(plr.Character)
+            if part then
+                local dist = (Camera.CFrame.Position - part.Position).Magnitude
 
-                local mag = (Vector2.new(pos.X, pos.Y) -
-                             Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
-
-                if mag < dist then
-                    dist = mag
+                if dist < shortest then
+                    shortest = dist
                     closest = plr
                 end
             end
@@ -2436,26 +2453,28 @@ RunService.RenderStepped:Connect(function()
     local target = GetClosest()
     if not target or not target.Character then return end
 
-    local head = GetHead(target.Character)
-    if not head then return end
+    local part = GetAimPart(target.Character)
+    if not part then return end
 
-    local predicted = Predict(head)
+    local predicted = Predict(part)
 
-    local cf = CFrame.new(Camera.CFrame.Position, predicted)
+    -- 🎯 correção do “mirando acima da cabeça”
+    local offset = Vector3.new(0, -0.15, 0)
 
-    -- 🔥 MAIS FORTE (sem suavidade fraca)
-    Camera.CFrame = cf:Lerp(Camera.CFrame, 1 - SMOOTHNESS)
+    local cf = CFrame.new(Camera.CFrame.Position, predicted + offset)
+
+    Camera.CFrame = Camera.CFrame:Lerp(cf, SMOOTHNESS)
 end)
 
 -- BOTÃO
 Tab:AddButton({
-    Name = "Aim Assist FORTE",
+    Name = "Aim Assist Smart",
     Callback = function()
         AIM_ENABLED = not AIM_ENABLED
     end
 })
 
--- SLIDER FOV
+-- FOV
 Tab:AddSlider({
     Name = "FOV",
     Min = 50,
@@ -2466,9 +2485,9 @@ Tab:AddSlider({
     end
 })
 
--- SLIDER FORÇA
+-- FORÇA
 Tab:AddSlider({
-    Name = "Força da Mira",
+    Name = "Força",
     Min = 10,
     Max = 100,
     Default = 25,

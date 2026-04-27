@@ -172,6 +172,73 @@ end
 
 
 
+--// SPEED INSANO (MÁXIMO)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local speed = 150
+local enabled = false
+local connection
+
+local function StartSpeed()
+    connection = RunService.RenderStepped:Connect(function()
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+        if not hrp or not humanoid then return end
+
+        humanoid.WalkSpeed = speed
+
+        if humanoid.MoveDirection.Magnitude > 0 then
+            -- força movimento (aqui é o segredo)
+            hrp.CFrame = hrp.CFrame + (humanoid.MoveDirection * 5)
+        end
+    end)
+end
+
+local function StopSpeed()
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+
+    local char = LocalPlayer.Character
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = 16
+    end
+end
+
+-- BOTÃO
+Tab:AddButton({
+    Name = "Speed Máximo",
+    Callback = function()
+        enabled = not enabled
+
+        if enabled then
+            StartSpeed()
+        else
+            StopSpeed()
+        end
+    end
+})
+
+-- SLIDER
+Tab:AddSlider({
+    Name = "Velocidade Insana",
+    Min = 50,
+    Max = 300,
+    Default = 150,
+    Callback = function(value)
+        speed = value
+    end
+})
+
+
 
 
 
@@ -400,19 +467,7 @@ local function DisableFullBright()
     Lighting.GlobalShadows = old.GlobalShadows
 end
 
--- BOTÃO
-Tab2:AddButton({
-    Name = "Ativar / Desativar FullBright",
-    Callback = function()
-        fullbright = not fullbright
 
-        if fullbright then
-            EnableFullBright()
-        else
-            DisableFullBright()
-        end
-    end
-})
 
 
 

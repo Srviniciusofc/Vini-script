@@ -2504,23 +2504,17 @@ Tab:AddSlider({
 
 
 
---// AIM ASSIST (ATIVA SOMENTE AO ATIRAR)
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local AIM_ENABLED = false
-local SHOOTING = false
-
 local FOV = 150
-local STRENGTH = 0.30
+local SMOOTHNESS = 0.2
 local PREDICTION = 0.15
 
--- FOV CIRCLE
 local circle = Drawing.new("Circle")
 circle.Thickness = 2
 circle.NumSides = 100
@@ -2528,48 +2522,39 @@ circle.Radius = FOV
 circle.Filled = false
 circle.Visible = false
 
--- INPUT (ATIRAR)
-UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        SHOOTING = true
-    end
-end)
+-- 🎯 PART FIXA (SEM FLICK ENTRE HEAD E TORSO)
+local function GetAimPart(char)
+    if not char then return nil end
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        SHOOTING = false
-    end
-end)
-
--- PART AIM
-local function GetHead(char)
-    return char and char:FindFirstChild("Head")
+    return char:FindFirstChild("Head")
+        or char:FindFirstChild("HumanoidRootPart")
 end
 
--- PREDICTION
-local function Predict(head)
-    local root = head.Parent:FindFirstChild("HumanoidRootPart")
-    if not root then return head.Position end
+-- 🧠 PREDICTION LIMPA
+local function Predict(part)
+    local root = part.Parent:FindFirstChild("HumanoidRootPart")
+    if not root then return part.Position end
 
     local vel = root.Velocity
-    return head.Position + Vector3.new(vel.X, 0, vel.Z) * PREDICTION
+    local flatVel = Vector3.new(vel.X, 0, vel.Z)
+
+    return part.Position + (flatVel * PREDICTION)
 end
 
--- CLOSEST TARGET
+-- 🎯 MELHOR ALVO (FOV DE TELA REAL)
 local function GetClosest()
-    local closest
+    local closest = nil
     local shortest = math.huge
 
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
-            local head = GetHead(plr.Character)
 
-            if head then
-                local pos = Camera:WorldToViewportPoint(head.Position)
+            local part = GetAimPart(plr.Character)
+            if part then
+                local screenPos, visible = Camera:WorldToViewportPoint(part.Position)
 
-                if pos.Z > 0 then
-                    local dist = (Vector2.new(pos.X, pos.Y) -
+                if visible then
+                    local dist = (Vector2.new(screenPos.X, screenPos.Y) -
                                   Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
 
                     if dist < FOV and dist < shortest then
@@ -2584,38 +2569,37 @@ local function GetClosest()
     return closest
 end
 
--- LOOP
 RunService.RenderStepped:Connect(function()
     circle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
     circle.Radius = FOV
     circle.Visible = AIM_ENABLED
 
     if not AIM_ENABLED then return end
-    if not SHOOTING then return end -- 🔥 SÓ QUANDO ATIRA
 
     local target = GetClosest()
     if not target or not target.Character then return end
 
-    local head = GetHead(target.Character)
-    if not head then return end
+    local part = GetAimPart(target.Character)
+    if not part then return end
 
-    local predicted = Predict(head)
+    local predicted = Predict(part)
 
     local camPos = Camera.CFrame.Position
-    local look = CFrame.new(camPos, predicted)
+    local cf = CFrame.new(camPos, predicted)
 
-    Camera.CFrame = Camera.CFrame:Lerp(look, STRENGTH)
+    -- 🔥 SUAVIDADE CONTROLADA (SEM “GRUDAR SECO”)
+    Camera.CFrame = Camera.CFrame:Lerp(cf, SMOOTHNESS)
 end)
 
 -- BOTÃO
 Tab:AddButton({
-    Name = "Aim Assist (Shoot Only)",
+    Name = "Aim Assist (Improved)",
     Callback = function()
         AIM_ENABLED = not AIM_ENABLED
     end
 })
 
--- FOV SLIDER
+-- FOV
 Tab:AddSlider({
     Name = "FOV",
     Min = 50,
@@ -2626,13 +2610,13 @@ Tab:AddSlider({
     end
 })
 
--- FORÇA SLIDER
+-- FORÇA
 Tab:AddSlider({
-    Name = "Força da Mira",
+    Name = "Força",
     Min = 1,
     Max = 100,
-    Default = 30,
+    Default = 20,
     Callback = function(v)
-        STRENGTH = v / 100
+        SMOOTHNESS = v / 100
     end
 })

@@ -2522,40 +2522,45 @@ circle.Radius = FOV
 circle.Filled = false
 circle.Visible = false
 
--- 🎯 PART FIXA (SEM FLICK ENTRE HEAD E TORSO)
-local function GetAimPart(char)
-    if not char then return nil end
-
-    return char:FindFirstChild("Head")
-        or char:FindFirstChild("HumanoidRootPart")
+-- 🔥 vivo check
+local function IsAlive(char)
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    return hum and hum.Health > 0
 end
 
--- 🧠 PREDICTION LIMPA
+-- 🎯 part estável (sem troca bugada)
+local function GetAimPart(char)
+    if not char then return nil end
+    return char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+end
+
+-- 🧠 prediction limpa
 local function Predict(part)
     local root = part.Parent:FindFirstChild("HumanoidRootPart")
     if not root then return part.Position end
 
     local vel = root.Velocity
-    local flatVel = Vector3.new(vel.X, 0, vel.Z)
+    local flat = Vector3.new(vel.X, 0, vel.Z)
 
-    return part.Position + (flatVel * PREDICTION)
+    return part.Position + flat * PREDICTION
 end
 
--- 🎯 MELHOR ALVO (FOV DE TELA REAL)
+-- 🎯 mais próximo REAL (FOV tela)
 local function GetClosest()
     local closest = nil
     local shortest = math.huge
 
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
+        if plr ~= LocalPlayer and plr.Character and IsAlive(plr.Character) then
 
             local part = GetAimPart(plr.Character)
             if part then
-                local screenPos, visible = Camera:WorldToViewportPoint(part.Position)
+
+                local pos, visible = Camera:WorldToViewportPoint(part.Position)
 
                 if visible then
-                    local dist = (Vector2.new(screenPos.X, screenPos.Y) -
-                                  Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                    local dist = (Vector2.new(pos.X, pos.Y) -
+                                 Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
 
                     if dist < FOV and dist < shortest then
                         shortest = dist
@@ -2569,6 +2574,7 @@ local function GetClosest()
     return closest
 end
 
+-- LOOP
 RunService.RenderStepped:Connect(function()
     circle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
     circle.Radius = FOV
@@ -2587,13 +2593,12 @@ RunService.RenderStepped:Connect(function()
     local camPos = Camera.CFrame.Position
     local cf = CFrame.new(camPos, predicted)
 
-    -- 🔥 SUAVIDADE CONTROLADA (SEM “GRUDAR SECO”)
     Camera.CFrame = Camera.CFrame:Lerp(cf, SMOOTHNESS)
 end)
 
 -- BOTÃO
 Tab:AddButton({
-    Name = "Aim Assist (Improved)",
+    Name = "Aim Assist Smart",
     Callback = function()
         AIM_ENABLED = not AIM_ENABLED
     end

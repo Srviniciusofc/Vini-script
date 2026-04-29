@@ -2365,141 +2365,11 @@ end
 
 
 
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-
-local AIM_ENABLED = false
-local FOV = 150
-local SMOOTHNESS = 0.25
-local PREDICTION = 0.15
-
-local circle = Drawing.new("Circle")
-circle.Thickness = 2
-circle.NumSides = 100
-circle.Radius = FOV
-circle.Filled = false
-circle.Visible = false
-
--- 🎯 pega head ou torso (inteligente)
-local function GetAimPart(char)
-    if not char then return nil end
-
-    local head = char:FindFirstChild("Head")
-    local torso = char:FindFirstChild("HumanoidRootPart")
-
-    if head and torso then
-        -- alterna conforme distância da câmera
-        local dist = (Camera.CFrame.Position - head.Position).Magnitude
-
-        if dist < 60 then
-            return head -- perto: head
-        else
-            return torso -- longe: torso
-        end
-    end
-
-    return head or torso
-end
-
--- 🧠 previsão corrigida (sem subir demais)
-local function Predict(part)
-    if not part then return nil end
-
-    local root = part.Parent:FindFirstChild("HumanoidRootPart")
-    if not root then return part.Position end
-
-    local vel = root.Velocity
-
-    -- corta eixo Y pra não mirar acima da cabeça
-    local flatVel = Vector3.new(vel.X, 0, vel.Z)
-
-    return part.Position + (flatVel * PREDICTION)
-end
-
--- 🎯 melhor alvo REAL (3D distance)
-local function GetClosest()
-    local closest = nil
-    local shortest = math.huge
-
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-
-            local part = GetAimPart(plr.Character)
-            if part then
-                local dist = (Camera.CFrame.Position - part.Position).Magnitude
-
-                if dist < shortest then
-                    shortest = dist
-                    closest = plr
-                end
-            end
-        end
-    end
-
-    return closest
-end
-
-RunService.RenderStepped:Connect(function()
-    circle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    circle.Radius = FOV
-    circle.Visible = AIM_ENABLED
-
-    if not AIM_ENABLED then return end
-
-    local target = GetClosest()
-    if not target or not target.Character then return end
-
-    local part = GetAimPart(target.Character)
-    if not part then return end
-
-    local predicted = Predict(part)
-
-    -- 🎯 correção do “mirando acima da cabeça”
-    local offset = Vector3.new(0, -0.15, 0)
-
-    local cf = CFrame.new(Camera.CFrame.Position, predicted + offset)
-
-    Camera.CFrame = Camera.CFrame:Lerp(cf, SMOOTHNESS)
-end)
-
--- BOTÃO
-Tab:AddButton({
-    Name = "Aim Assist Smart",
-    Callback = function()
-        AIM_ENABLED = not AIM_ENABLED
-    end
-})
-
--- FOV
-Tab:AddSlider({
-    Name = "FOV",
-    Min = 50,
-    Max = 300,
-    Default = 150,
-    Callback = function(v)
-        FOV = v
-    end
-})
-
--- FORÇA
-Tab:AddSlider({
-    Name = "Força",
-    Min = 10,
-    Max = 100,
-    Default = 25,
-    Callback = function(v)
-        SMOOTHNESS = v / 100
-    end
-})
+local InicionSection = Tab:AddSection("Aim")
 
 
 
-
-
+--AIMBOT
 
 
 
@@ -2598,7 +2468,7 @@ end)
 
 -- BOTÃO
 Tab:AddButton({
-    Name = "Aim Assist Smart",
+    Name = "Aimbot",
     Callback = function()
         AIM_ENABLED = not AIM_ENABLED
     end

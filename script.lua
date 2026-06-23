@@ -2495,3 +2495,86 @@ Tab:AddSlider({
         SMOOTHNESS = v / 100
     end
 })
+
+
+
+
+
+
+--Fazenda
+
+
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local AutoHoneyEnabled = false
+
+local function getNearestHoneycomb()
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+    local Closest = nil
+    local Shortest = math.huge
+
+    for _, Obj in ipairs(workspace:GetDescendants()) do
+        if Obj:IsA("Model") or Obj:IsA("Part") then
+            local Name = Obj.Name:lower()
+
+            if Name:find("honeycomb") or Name:find("honey") or Name:find("comb") then
+                local Root
+
+                if Obj:IsA("Model") then
+                    Root = Obj:FindFirstChild("HumanoidRootPart")
+                        or Obj:FindFirstChildWhichIsA("BasePart")
+                else
+                    Root = Obj
+                end
+
+                if Root then
+                    local Distance = (Root.Position - HumanoidRootPart.Position).Magnitude
+
+                    if Distance < Shortest then
+                        Shortest = Distance
+                        Closest = Root
+                    end
+                end
+            end
+        end
+    end
+
+    return Closest
+end
+
+Tab2:AddToggle({
+    Name = "Auto Collect Honeycomb",
+    Default = false,
+    Callback = function(Value)
+        AutoHoneyEnabled = Value
+
+        if Value then
+            RedzLib:Notify("Auto Honey", "Ativado!", 3)
+
+            task.spawn(function()
+                while AutoHoneyEnabled do
+                    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+                    local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+
+                    if HumanoidRootPart then
+                        local Target = getNearestHoneycomb()
+
+                        if Target then
+                            HumanoidRootPart.CFrame = Target.CFrame + Vector3.new(0, 5, 0)
+                            task.wait(0.5)
+                        end
+                    end
+
+                    task.wait(0.3)
+                end
+            end)
+        else
+            RedzLib:Notify("Auto Honey", "Desativado!", 3)
+        end
+    end
+})
